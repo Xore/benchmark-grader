@@ -20,3 +20,6 @@ transcripts/
 grades/
 coder-artifacts/
 .archify/
+
+# dashboard-owned reviewer state (human decisions, not source)
+grades.json
