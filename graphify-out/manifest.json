@@ -24,9 +24,9 @@
     "semantic_hash": "94105679b0551a25785a67458cef973c"
   },
   "src/app.tsx": {
-    "mtime": 1791101396.8809373,
-    "seen": 1791110837.590375,
-    "ast_hash": "606ee43a88b4a5f2b51d0dcec1001a31",
+    "mtime": 1791133709.2258685,
+    "seen": 1791133725.944654,
+    "ast_hash": "eee488803ad3d37613a290a266357694",
     "semantic_hash": ""
   },
   "src/shiki-tokenizer.ts": {
@@ -66,10 +66,10 @@
     "semantic_hash": "6a82f50c97acacf8999fc407b79ca3ab"
   },
   "src/themes/neutral/neutralTheme.ts": {
-    "mtime": 1791076834.0296237,
-    "seen": 1791077161.7552218,
-    "ast_hash": "cc80b79a75fd2f5f3195c3c16f126273",
-    "semantic_hash": "cc80b79a75fd2f5f3195c3c16f126273"
+    "mtime": 1791133709.2258685,
+    "seen": 1791133725.944667,
+    "ast_hash": "2e12290f0b4a4618d9128cdb8670089d",
+    "semantic_hash": ""
   },
   "src/themes/neutral/palette.config.json": {
     "mtime": 1791076834.031367,
@@ -114,15 +114,15 @@
     "semantic_hash": "0ea104c6ed96a901301550e8a64f994d"
   },
   "serve.ts": {
-    "mtime": 1791102037.0875292,
-    "seen": 1791110837.5903687,
-    "ast_hash": "fe2dc08ef404dd8b2b94b199d9cc6558",
+    "mtime": 1791133709.2165515,
+    "seen": 1791133725.9446492,
+    "ast_hash": "b5670190b8598fba6f1e7027bec59267",
     "semantic_hash": ""
   },
   "src/dashboard.tsx": {
-    "mtime": 1791110212.1659584,
-    "seen": 1791110837.5903761,
-    "ast_hash": "afc47128af051de82dee6359a61fe3d3",
+    "mtime": 1791133709.2258685,
+    "seen": 1791133725.9446557,
+    "ast_hash": "8e45b36bd38cc3abc1acdaf741fecf6e",
     "semantic_hash": ""
   },
   "src/data.ts": {
@@ -132,15 +132,15 @@
     "semantic_hash": ""
   },
   "theme.template.ts": {
-    "mtime": 1791078451.1532245,
-    "seen": 1791110837.5903904,
+    "mtime": 1791133709.214467,
+    "seen": 1791133725.9446697,
     "ast_hash": "7a49266c30202157f67c62a62698ee27",
     "semantic_hash": ""
   },
   "verify-ui.ts": {
-    "mtime": 1791110454.4261007,
-    "seen": 1791110837.5903983,
-    "ast_hash": "ead166a6abc59d4c0fa758e9580afc96",
+    "mtime": 1791133709.210467,
+    "seen": 1791133725.9446774,
+    "ast_hash": "b045f35121881d7e0e9c6f71d3f4e661",
     "semantic_hash": ""
   },
   "AGENTS.md": {
@@ -162,9 +162,27 @@
     "semantic_hash": ""
   },
   "src/index.html": {
-    "mtime": 1791080012.0127797,
-    "seen": 1791110837.590404,
-    "ast_hash": "3fa41a7e6bd005bb2702d9f9dca3f7e0",
+    "mtime": 1791133709.2258685,
+    "seen": 1791133725.9446871,
+    "ast_hash": "008e5c99fe7f1e0d34b9e63e637ca5e6",
+    "semantic_hash": ""
+  },
+  ".archify/architecture-review-dashboard-20261004-124800/candidate.json": {
+    "mtime": 1791111249.5300322,
+    "seen": 1791133725.9446366,
+    "ast_hash": "34ca0dcc64f706b10d72c0d25188f2f2",
+    "semantic_hash": ""
+  },
+  ".archify/architecture-review-dashboard-20261004-124800/review-dashboard.html": {
+    "mtime": 1791111249.530413,
+    "seen": 1791133725.9446802,
+    "ast_hash": "221890cc3f446799a1d7d325ac9b5f11",
+    "semantic_hash": ""
+  },
+  ".github/workflows/ci.yml": {
+    "mtime": 1791111308.7728786,
+    "seen": 1791133725.9446814,
+    "ast_hash": "f9e3cf51c4c54d85cf66ac30b48b2800",
     "semantic_hash": ""
   }
 }
