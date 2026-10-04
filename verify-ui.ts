@@ -448,6 +448,22 @@ if (gradeBtns === 0)
 if (narrow.overflowX > 2)
   errors.push(`NARROW: horizontal overflow of ${narrow.overflowX}px at 780px`)
 
+// Control-clipping audit at the narrow width. A long button label in a
+// non-wrapping row renders as "Grade a\u2026" on a phone -- invisible in
+// source review, and it happened twice to the same control.
+const clipped = await evalJs(`(() => {
+  const out = []
+  for (const e of document.querySelectorAll('button,[role="tab"],[class*="badge"]')) {
+    if (e.clientWidth > 0 && e.scrollWidth > e.clientWidth + 2)
+      out.push({txt: (e.innerText||'').trim().slice(0,40), w: e.clientWidth, sw: e.scrollWidth})
+  }
+  return out
+})()`)
+console.log('clipped controls:', JSON.stringify(clipped))
+for (const c of clipped) {
+  errors.push('CLIPPED: "' + c.txt + '" (' + c.sw + 'px into ' + c.w + 'px)')
+}
+
 console.log('\n=== ERRORS ===')
 console.log(errors.length ? errors.join('\n') : '(none)')
 cdp.close()

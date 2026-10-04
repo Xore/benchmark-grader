@@ -678,7 +678,7 @@ export default function ResizableWorkspacePage() {
                 value={totalFiles ? gradedFiles / totalFiles : 0}
               />
               <Button
-                label="Grade all files"
+                label="Grade all"
                 size="sm"
                 onClick={gradeAll}
                 isDisabled={!cases.find(c => c.id === caseId)}
@@ -1333,7 +1333,7 @@ export default function ResizableWorkspacePage() {
                                           onClick={() => grade(picked.c, picked.a, null)}
                                         />
                                         <Button
-                                          label="Grade all files"
+                                          label="Grade all"
                                           size="sm"
                                           onClick={gradeAll}
                                           isDisabled={!cases.find(c => c.id === caseId)}
