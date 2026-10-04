@@ -212,6 +212,47 @@ function loadRun(runId: string): unknown | null {
   // stem equals a case id are attributed; the rest land in an explicit
   // unattributed bucket rather than being silently mislabelled.
   const artRoot = join(dir, 'coder-artifacts')
+
+  // Optional per-case artifact index, written by the runner
+  // (evaluate-models.py). Maps an artifact path back to the case that produced
+  // it, which filename-matching cannot do when the model names the file itself
+  // (main.rs, aim_assist.cpp). Absent on runs from a runner that predates it,
+  // in which case attribution falls back to the filename stem -- so this is
+  // additive and never required.
+  const indexPath = join(dir, 'artifact-index.jsonl')
+  const byPath = new Map<string, string>()
+  {
+    const raw = safeRead(indexPath)
+    for (const line of (raw ?? '').split('\n')) {
+      const t = line.trim()
+      if (!t) continue
+      try {
+        const rec = JSON.parse(t) as {
+          case?: string
+          paths?: Record<string, string> | string[]
+        }
+        if (!rec.case) continue
+        const entries =
+          Array.isArray(rec.paths)
+            ? rec.paths.map(p => [String(p), 'api_tool'] as const)
+            : Object.entries(rec.paths ?? {})
+        // The index may key paths tier-relative ('tool-written/main.rs') while
+        // the walk yields them model-tagged
+        // ('fake:model/tool-written/main.rs'). Index both forms, and resolve
+        // with the same longest-suffix rule the walk uses, so a miss here means
+        // "genuinely unattributable" rather than a path-prefix mismatch.
+        for (const [rel] of entries) {
+          byPath.set(rel, String(rec.case))
+          const segs = rel.split('/')
+          for (let i = 1; i < segs.length; i++)
+            byPath.set(segs.slice(i).join('/'), String(rec.case))
+        }
+      } catch {
+        // One malformed line must not lose the whole run's attribution.
+      }
+    }
+  }
+
   const unattributed: Artifact[] = []
   for (const rel of walk(artRoot)) {
     if (!rel || rel.endsWith('source-manifest.json')) continue
@@ -225,8 +266,18 @@ function loadRun(runId: string): unknown | null {
     if (source === null) continue
     const base = rel.split('/').pop() ?? ''
     const stem = base.replace(/\.[^.]+$/, '')
-    const art: Artifact = {path: rel, lang: langOf(base), source, case: stem}
-    if (cases.has(stem)) cases.get(stem)!.artifacts.push(art)
+    // Index wins over filename: the index is authoritative, the stem is a
+    // heuristic that only happens to work when the model named the file after
+    // the case.
+    const owner =
+      byPath.get(rel) ??
+      // suffix match: index the trailing segments, longest first
+      (rel.split('/').reduce<string | null>(
+        (acc, _, i, parts) => byPath.get(parts.slice(i).join('/')) ?? acc,
+        null,
+      ) ?? stem)
+    const art: Artifact = {path: rel, lang: langOf(base), source, case: owner}
+    if (cases.has(owner)) cases.get(owner)!.artifacts.push(art)
     else unattributed.push(art)
   }
   if (unattributed.length)

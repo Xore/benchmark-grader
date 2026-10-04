@@ -462,11 +462,12 @@ export default function ResizableWorkspacePage() {
       label: 'Grade',
       // Was String(score), so the reviewer saw "1" / "0" / "ungraded" -- raw
       // storage values in a judgment tool.
-      value:
-        (({ score }) =>
-          score === 1 ? 'Passed' : score === 0 ? 'Failed' : 'Not graded')(
-          grades[`${picked.c.id}:${picked.a.path}`],
-        ),
+      // Was an IIFE destructuring its argument -- which threw when the file has
+      // no grade at all, i.e. exactly the common case on a fresh run.
+      value: (() => {
+        const score = grades[`${picked.c.id}:${picked.a.path}`]?.score;
+        return score === 1 ? 'Passed' : score === 0 ? 'Failed' : 'Not graded';
+      })(),
     },
     {
       label: 'Graded at',
