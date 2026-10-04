@@ -111,22 +111,28 @@ function buildFileTree(
     // case belongs to.
     endContent: c.rubric?.bucket ? <Token label={c.rubric.bucket} size="sm" /> : undefined,
     isExpanded: true,
-    children: c.artifacts.map(a => {
+    children: (() => {
+      // description only where the basename is ambiguous. Same basename in two
+      // dirs does happen (tool-written/parse_record.c vs tool-written/src/),
+      // and then the path is the only thing telling them apart. Everywhere else
+      // it is pure noise that hard-clipped 18-61px at narrow widths.
+      const names = c.artifacts.map(a => a.path.split('/').pop() ?? a.path);
+      const dupe = (n: string) => names.filter(x => x === n).length > 1;
+      return c.artifacts.map((a, i) => {
       const score = grades[`${c.id}:${a.path}`]?.score;
-      const name = a.path.split('/').pop() ?? a.path;
+      const name = names[i]!;
       return {
         id: `${c.id}:${a.path}`,
-        // Basename as the label, full path as the official `description`.
-        //
-        // The label used to be the whole path, on the reasoning that two files
-        // with the same basename in one case must stay distinguishable. That
-        // traded a hard defect for a soft one: maxLines={1} then clipped the
-        // tail, and the tail is the directory -- so every row read
-        // "qwen3:8b/tool-written/k8s-audi", overflowing its box by 44-80px at
-        // EVERY width, 1600 included. The paths are still fully visible, in
-        // the field built to hold them, wrapping instead of being guillotined.
-        label: label(name),
-        description: a.path,
+        // Basename label; `description` carries the full path only when the
+        // basename repeats (see below). The label used to be the whole path,
+        // which clipped every row at EVERY width; the paths remain visible in
+        // the panel built to hold them.
+        // Same basename twice in one case happens (tool-written/parse_record.c
+        // vs tool-written/src/). The parent dir is the only thing that tells
+        // them apart, so it goes in the label -- which ellipsises by design.
+        // It does NOT go in `description`: TreeListItem renders that in a
+        // fixed-width span with no style hook, so a path there hard-clips.
+        label: label(dupe(name) ? `${a.path.split('/').slice(-2, -1)[0]}/${name}` : name),
         startContent: <Icon icon={DocumentTextIcon} size="xsm" />,
         // Three distinct states, never two: pass, fail, and not-yet-judged are
         // different decisions and must not collapse into one glyph.
@@ -163,7 +169,8 @@ function buildFileTree(
         isSelected: selectedId === `${c.id}:${a.path}`,
         onClick: () => onFileClick(c, a),
       };
-    }),
+      });
+    })(),
   }));
 }
 
