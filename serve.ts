@@ -21,7 +21,11 @@ const RUBRIC =
   '/home/xore/Github/APIARY/analysis/ghidra/benchmarks/corpus/coder_cases_v1_rubric.json'
 
 // Grades live here, NOT in the run dir, so we never touch runner output.
-const GRADES_FILE = join(ROOT, 'grades.json')
+// ponytail: GRADES_FILE is overridable so a test or demo server can be pointed
+// at a scratch file instead of the real gradebook. It was hardcoded, which
+// meant every UI probe during the 16f3402 audit wrote into the real
+// grades.json; that only stayed clean because each probe restored a backup.
+const GRADES_FILE = process.env.GRADES_FILE ?? join(ROOT, 'grades.json')
 
 const MIME: Record<string, string> = {
   '.html': 'text/html; charset=utf-8',
