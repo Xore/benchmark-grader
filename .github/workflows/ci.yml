@@ -1,0 +1,63 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+# A new push supersedes the previous run on the same ref.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      # NOTE: there is deliberately no "astryx detect" step. That subcommand
+      # does not exist -- `bunx astryx detect` exits 0 while printing the help
+      # menu, which is a gate that can never fail and proves nothing. The real
+      # Impeccable detector ships with the agent skill, not with this repo, so
+      # it stays a local gate rather than a CI step that lies about running.
+      - name: TypeScript
+        run: bunx tsc --noEmit
+
+      # Ported from the runner's own injection_gate.py, so a divergence in the
+      # degeneracy/repetition heuristics is the thing most worth catching here.
+      - name: Detector self-test
+        run: bun run verify:selftest
+
+      # verify:ui is deliberately NOT run here. It drives real Chrome over CDP
+      # against a run directory, and a CI runner has neither: the fixture it
+      # grades against is a local throwaway under /tmp, not committed. A gate
+      # that needs a hand-built environment is a gate that silently rots, so
+      # it stays a local gate and the comment above says why.
+
+  cleanup:
+    # Delete a branch once its PR merges, so a merged feature branch stops
+    # being a second place that looks like the truth.
+    if: github.event_name == 'pull_request' && github.event.pull_request.merged == true
+    needs: verify
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - name: Delete merged branch
+        uses: actions/delete-branch@v4
+        with:
+          ref-name: ${{ github.event.pull_request.head.ref }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}

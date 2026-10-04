@@ -1,0 +1,387 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "Benchmark Review Dashboard \u2014 Data Ownership and Review Journey",
+    "subtitle": "RUN_DIR is read-only to the dashboard; grades.json is the only file it writes",
+    "output": ".archify/architecture-review-dashboard-20261004-124800/review-dashboard.html",
+    "quality_profile": "showcase",
+    "repository": {
+      "url": "https://github.com/Xore/benchmark-grader",
+      "provider": "github",
+      "revision": "6c5c4cf235cf2a26101f0cce193465921ebda0b1"
+    },
+    "legend": {
+      "mode": "auto"
+    }
+  },
+  "components": [
+    {
+      "id": "reviewer",
+      "type": "external",
+      "label": "Reviewer",
+      "sublabel": "grades model output",
+      "pos": [
+        30,
+        270
+      ],
+      "size": [
+        140,
+        64
+      ],
+      "tag": "human"
+    },
+    {
+      "id": "browser",
+      "type": "frontend",
+      "label": "Browser",
+      "sublabel": "Astryx UI, port 3020",
+      "pos": [
+        250,
+        270
+      ],
+      "size": [
+        160,
+        64
+      ]
+    },
+    {
+      "id": "srv",
+      "type": "backend",
+      "label": "serve.ts",
+      "sublabel": "Bun HTTP server + API",
+      "pos": [
+        490,
+        270
+      ],
+      "size": [
+        180,
+        70
+      ],
+      "tag": "Bun",
+      "sources": [
+        {
+          "path": "serve.ts",
+          "line": 551,
+          "label": "server startup"
+        }
+      ]
+    },
+    {
+      "id": "bundle",
+      "type": "frontend",
+      "label": "app.js bundle",
+      "sublabel": "esbuild, in-process cache",
+      "pos": [
+        490,
+        410
+      ],
+      "size": [
+        180,
+        60
+      ],
+      "sources": [
+        {
+          "path": "serve.ts",
+          "line": 16,
+          "end_line": 23,
+          "label": "RUN_DIR + grades path"
+        }
+      ]
+    },
+    {
+      "id": "runtree",
+      "type": "backend",
+      "label": "Run loader",
+      "sublabel": "scans transcripts per request",
+      "pos": [
+        780,
+        150
+      ],
+      "size": [
+        170,
+        62
+      ],
+      "tag": "read-only",
+      "sources": [
+        {
+          "path": "serve.ts",
+          "line": 154,
+          "label": "loadRun"
+        }
+      ]
+    },
+    {
+      "id": "rubsvc",
+      "type": "backend",
+      "label": "Rubric loader",
+      "sublabel": "process-cached, anchors + cases",
+      "pos": [
+        780,
+        262
+      ],
+      "size": [
+        170,
+        62
+      ],
+      "sources": [
+        {
+          "path": "serve.ts",
+          "line": 154,
+          "label": "run + rubric load"
+        }
+      ]
+    },
+    {
+      "id": "artsvc",
+      "type": "backend",
+      "label": "Artifact resolver",
+      "sublabel": "index, then filename/header",
+      "pos": [
+        780,
+        374
+      ],
+      "size": [
+        170,
+        62
+      ],
+      "sources": [
+        {
+          "path": "serve.ts",
+          "line": 222,
+          "label": "artifact-index.jsonl"
+        }
+      ]
+    },
+    {
+      "id": "diagsvc",
+      "type": "backend",
+      "label": "Diagnostics",
+      "sublabel": "degeneracy + repetition",
+      "pos": [
+        780,
+        486
+      ],
+      "size": [
+        170,
+        62
+      ],
+      "sources": [
+        {
+          "path": "serve.ts",
+          "line": 139,
+          "end_line": 196,
+          "label": "degeneracy + repetition"
+        }
+      ]
+    },
+    {
+      "id": "rundir",
+      "type": "database",
+      "label": "RUN_DIR",
+      "sublabel": "transcripts, artifacts, index",
+      "pos": [
+        1050,
+        150
+      ],
+      "size": [
+        175,
+        72
+      ],
+      "tag": "RUNNER-OWNED",
+      "sources": [
+        {
+          "path": "serve.ts",
+          "line": 16,
+          "label": "RUN_DIR env"
+        }
+      ]
+    },
+    {
+      "id": "rubfile",
+      "type": "database",
+      "label": "rubric.json",
+      "sublabel": "corpus rubric",
+      "pos": [
+        1050,
+        262
+      ],
+      "size": [
+        175,
+        62
+      ],
+      "tag": "RUNNER-OWNED"
+    },
+    {
+      "id": "artdir",
+      "type": "database",
+      "label": "coder-artifacts/",
+      "sublabel": "model-written files",
+      "pos": [
+        1050,
+        374
+      ],
+      "size": [
+        175,
+        62
+      ],
+      "tag": "RUNNER-OWNED"
+    },
+    {
+      "id": "grades",
+      "type": "database",
+      "label": "grades.json",
+      "sublabel": "dashboard scores + notes",
+      "pos": [
+        490,
+        570
+      ],
+      "size": [
+        175,
+        70
+      ],
+      "tag": "DASHBOARD-OWNED",
+      "sources": [
+        {
+          "path": "serve.ts",
+          "line": 331,
+          "end_line": 342,
+          "label": "read/write grades.json"
+        }
+      ]
+    },
+    {
+      "id": "human_g",
+      "type": "database",
+      "label": "human-grades.json",
+      "sublabel": "never opened for write",
+      "pos": [
+        780,
+        570
+      ],
+      "size": [
+        175,
+        70
+      ],
+      "tag": "RUNNER-OWNED",
+      "sources": [
+        {
+          "path": "serve.ts",
+          "line": 8,
+          "label": "human-grades never written"
+        }
+      ]
+    }
+  ],
+  "boundaries": [
+    {
+      "kind": "security-group",
+      "label": "Runner-owned, read-only to dashboard",
+      "wraps": [
+        "rundir",
+        "rubfile",
+        "artdir",
+        "human_g"
+      ]
+    },
+    {
+      "kind": "region",
+      "label": "Dashboard-owned state",
+      "wraps": [
+        "grades"
+      ]
+    }
+  ],
+  "connections": [
+    {
+      "id": "rev-br",
+      "from": "reviewer",
+      "to": "browser",
+      "label": "open :3020",
+      "variant": "emphasis"
+    },
+    {
+      "id": "br-srv",
+      "from": "browser",
+      "to": "srv",
+      "label": "GET /api/*",
+      "variant": "default"
+    },
+    {
+      "id": "br-bundle",
+      "from": "browser",
+      "to": "bundle",
+      "label": "load bundle",
+      "variant": "dashed"
+    },
+    {
+      "id": "srv-bundle",
+      "from": "srv",
+      "to": "bundle",
+      "label": "esbuild + cache"
+    },
+    {
+      "id": "srv-rt",
+      "from": "srv",
+      "to": "runtree",
+      "label": "read"
+    },
+    {
+      "id": "srv-ru",
+      "from": "srv",
+      "to": "rubsvc"
+    },
+    {
+      "id": "srv-ar",
+      "from": "srv",
+      "to": "artsvc"
+    },
+    {
+      "id": "srv-di",
+      "from": "srv",
+      "to": "diagsvc"
+    },
+    {
+      "id": "rt-rundir",
+      "from": "runtree",
+      "to": "rundir",
+      "label": "scan",
+      "variant": "dashed"
+    },
+    {
+      "id": "ru-rubfile",
+      "from": "rubsvc",
+      "to": "rubfile",
+      "label": "cache",
+      "variant": "dashed"
+    },
+    {
+      "id": "ar-artdir",
+      "from": "artsvc",
+      "to": "artdir",
+      "label": "index \u2192 fallback",
+      "variant": "dashed"
+    },
+    {
+      "id": "ar-rundir",
+      "from": "artsvc",
+      "to": "rundir",
+      "label": "read index.jsonl",
+      "variant": "dashed"
+    },
+    {
+      "id": "srv-gr",
+      "from": "srv",
+      "to": "grades",
+      "label": "POST /api/grades",
+      "variant": "security"
+    },
+    {
+      "id": "br-gr",
+      "from": "browser",
+      "to": "grades",
+      "label": "render grade state",
+      "variant": "dashed"
+    }
+  ]
+}

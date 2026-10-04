@@ -6,33 +6,26 @@
       "src_answer_chunks_chunkanswer",
       "src_answer_chunks_codescore",
       "src_answer_chunks_iscode",
-      "src_answer_chunks_issentence",
-      "src_app",
-      "src_app_app",
-      "src_app_case",
-      "src_app_caselang",
-      "src_app_centered",
-      "src_app_check",
-      "src_app_corpus",
-      "src_app_get",
-      "src_app_gradebuttons",
-      "src_app_grademap",
-      "src_app_lang",
-      "src_app_langof",
-      "src_app_num",
-      "src_app_roundmessage",
-      "src_app_run",
-      "src_app_turn"
+      "src_answer_chunks_issentence"
     ],
     "1": [
       "package",
       "package_astryx",
       "package_astryx_theme",
+      "package_devdependencies",
+      "package_devdependencies_astryxdesign_cli",
+      "package_devdependencies_types_bun",
+      "package_devdependencies_types_react",
+      "package_devdependencies_types_react_dom",
+      "package_devdependencies_typescript",
       "package_name",
       "package_private",
       "package_scripts",
       "package_scripts_dev",
+      "package_scripts_serve",
       "package_scripts_start",
+      "package_scripts_verify_selftest",
+      "package_scripts_verify_ui",
       "package_type",
       "ref_astryxdesign_cli",
       "ref_astryxdesign_core",
@@ -89,9 +82,16 @@
       "src_themes_neutral_neutraltheme_neutralsyntax",
       "src_themes_neutral_neutraltheme_neutraltheme",
       "src_themes_neutral_neutraltheme_statusfill",
-      "src_themes_neutral_neutraltheme_withalpha"
+      "src_themes_neutral_neutraltheme_withalpha",
+      "tmpl_ide",
+      "tmpl_ide_buildfiletree",
+      "tmpl_ide_history_items",
+      "tmpl_ide_properties",
+      "tmpl_ide_resizableworkspacepage",
+      "tmpl_ide_styles"
     ],
     "5": [
+      "src_app",
       "src_shiki_tokenizer",
       "src_shiki_tokenizer_alias",
       "src_shiki_tokenizer_cache",
@@ -163,12 +163,29 @@
       "server_runs"
     ],
     "11": [
-      "package_devdependencies",
-      "package_devdependencies_astryxdesign_cli",
-      "package_devdependencies_types_bun",
-      "package_devdependencies_types_react",
-      "package_devdependencies_types_react_dom",
-      "package_devdependencies_typescript"
+      "src_dashboard",
+      "src_dashboard_buildfiletree",
+      "src_dashboard_resizableworkspacepage",
+      "src_dashboard_styles",
+      "src_data",
+      "src_data_artifact",
+      "src_data_attempt",
+      "src_data_bytesof",
+      "src_data_case",
+      "src_data_grade",
+      "src_data_gradebook",
+      "src_data_json",
+      "src_data_langof",
+      "src_data_linesof",
+      "src_data_listruns",
+      "src_data_loadgrades",
+      "src_data_loadrun",
+      "src_data_promptof",
+      "src_data_rubric",
+      "src_data_run",
+      "src_data_runsummary",
+      "src_data_savegrade",
+      "src_data_savelinenote"
     ],
     "12": [
       "src_themes_neutral_neutralpalettes",
@@ -179,35 +196,131 @@
       "src_themes_neutral_neutralpalettes_neutralpalettes"
     ],
     "13": [
-      "tmpl_ide",
-      "tmpl_ide_buildfiletree",
-      "tmpl_ide_history_items",
-      "tmpl_ide_properties",
-      "tmpl_ide_resizableworkspacepage",
-      "tmpl_ide_styles"
+      "runbook_astryx_npm_script_alias_prevents_silent_cli_failures",
+      "runbook_batch_component_lookup_the_cheapest_existence_check",
+      "runbook_canonical_cli_invocations_no_hand_rolling",
+      "runbook_data_sources_located_brief_data_sources_asked_first",
+      "runbook_dense_on_every_command",
+      "runbook_frame_from_the_official_docs_docs_layout_not_from_template_choice",
+      "runbook_gate_every_brief_point_brief_working_method",
+      "runbook_hard_constraints_from_the_brief_pass_fail_not_preferences",
+      "runbook_log",
+      "runbook_mcp_server_register_this",
+      "runbook_phase_0_preflight",
+      "runbook_phase_1_template_scaffolds_brief_4",
+      "runbook_phase_2_bun_service_new_the_old_server_ts_is_not_reused",
+      "runbook_phase_3_features_each_closed_against_the_brief",
+      "runbook_phase_3b_review_quality_owner_addition",
+      "runbook_phase_4_impeccable_after_the_above_is_green",
+      "runbook_required_features_brief_required_features",
+      "runbook_runbook_grader_dashboard_standalone_bun_astryx_only",
+      "runbook_styling_rules_docs_styling",
+      "runbook_template_writing_rules",
+      "runbook_the_3_step_contract_docs_working_with_ai_this_is_the_whole_thing",
+      "runbook_the_3_stylesheets_are_mandatory_docs_getting_started"
+    ],
+    "14": [
+      "serve",
+      "serve_case",
+      "serve_fetch",
+      "serve_grades_file",
+      "serve_isdegenerate",
+      "serve_langof",
+      "serve_listruns",
+      "serve_loadrun",
+      "serve_mime",
+      "serve_port",
+      "serve_readgrades",
+      "serve_repetitionratio",
+      "serve_rubricof",
+      "serve_saferead",
+      "serve_walk",
+      "serve_writegrades"
+    ],
+    "15": [
+      "readme",
+      "readme_benchmark_grader",
+      "readme_data_directory_contract",
+      "readme_endpoints",
+      "readme_environment",
+      "readme_grades_json_write_owned_by_the_dashboard",
+      "readme_honesty_rules_baked_in",
+      "readme_layout",
+      "readme_run_dir_read_only_owned_by_the_benchmark_runner",
+      "readme_start",
+      "readme_ui_rules",
+      "readme_verifying",
+      "runbook"
+    ],
+    "16": [
+      "verify_ui",
+      "verify_ui_attach",
+      "verify_ui_cdp",
+      "verify_ui_clicktext",
+      "verify_ui_cramped",
+      "verify_ui_desktop",
+      "verify_ui_errors",
+      "verify_ui_evaljs",
+      "verify_ui_msg",
+      "verify_ui_sleep",
+      "verify_ui_text",
+      "verify_ui_waitfor"
+    ],
+    "17": [
+      "agents",
+      "agents_agents_md"
+    ],
+    "18": [
+      "theme_template",
+      "theme_template_mytheme"
     ]
   },
   "cohesion": {
-    "0": 0.13852813852813853,
-    "1": 0.1,
+    "0": 0.5333333333333333,
+    "1": 0.06896551724137931,
     "2": 0.14285714285714285,
     "3": 0.16666666666666666,
-    "4": 0.19696969696969696,
-    "5": 0.21818181818181817,
+    "4": 0.13071895424836602,
+    "5": 0.21212121212121213,
     "6": 0.21818181818181817,
     "7": 0.18181818181818182,
     "8": 0.2545454545454545,
     "9": 0.25,
     "10": 0.42857142857142855,
-    "11": 0.3333333333333333,
+    "11": 0.19367588932806323,
     "12": 0.5333333333333333,
-    "13": 0.4
+    "13": 0.09090909090909091,
+    "14": 0.23333333333333334,
+    "15": 0.15384615384615385,
+    "16": 0.24242424242424243,
+    "17": 1.0,
+    "18": 1.0
   },
   "gods": [
+    {
+      "id": "runbook_runbook_grader_dashboard_standalone_bun_astryx_only",
+      "label": "RUNBOOK — Grader Dashboard (standalone, Bun + Astryx only)",
+      "degree": 17
+    },
+    {
+      "id": "src_dashboard_resizableworkspacepage",
+      "label": "ResizableWorkspacePage()",
+      "degree": 13
+    },
     {
       "id": "tsconfig_compileroptions",
       "label": "compilerOptions",
       "degree": 12
+    },
+    {
+      "id": "readme_benchmark_grader",
+      "label": "benchmark-grader",
+      "degree": 9
+    },
+    {
+      "id": "serve_loadrun",
+      "label": "loadRun()",
+      "degree": 8
     },
     {
       "id": "ref_react",
@@ -215,53 +328,77 @@
       "degree": 7
     },
     {
-      "id": "src_answer_chunks_chunkanswer",
-      "label": "chunkAnswer()",
-      "degree": 4
+      "id": "src_data_json",
+      "label": "json()",
+      "degree": 6
     },
     {
-      "id": "src_app_app",
-      "label": "App()",
-      "degree": 4
-    },
-    {
-      "id": "src_app_roundmessage",
-      "label": "RoundMessage()",
-      "degree": 4
-    },
-    {
-      "id": "server_fetch",
+      "id": "serve_fetch",
       "label": "fetch()",
-      "degree": 4
+      "degree": 6
     },
     {
-      "id": "src_shiki_tokenizer_tokenize",
-      "label": "tokenize()",
-      "degree": 4
+      "id": "package_scripts",
+      "label": "scripts",
+      "degree": 6
     },
     {
-      "id": "verify_evaluate",
-      "label": "evaluate()",
-      "degree": 4
-    },
-    {
-      "id": "src_answer_chunks_codescore",
-      "label": "codeScore()",
-      "degree": 3
-    },
-    {
-      "id": "src_answer_chunks_iscode",
-      "label": "isCode()",
-      "degree": 3
+      "id": "runbook_the_3_step_contract_docs_working_with_ai_this_is_the_whole_thing",
+      "label": "The 3-step contract (docs/working-with-ai) — this is the whole thing",
+      "degree": 6
     }
   ],
   "surprises": [
     {
-      "source": "RoundMessage()",
+      "source": "ResizableWorkspacePage()",
       "target": "chunkAnswer()",
       "source_files": [
-        "src/app.tsx",
+        "src/dashboard.tsx",
         "src/answer-chunks.ts"
+      ],
+      "confidence": "EXTRACTED",
+      "relation": "calls",
+      "why": "bridges separate communities"
+    },
+    {
+      "source": "ResizableWorkspacePage()",
+      "target": "tokenize()",
+      "source_files": [
+        "src/dashboard.tsx",
+        "src/shiki-tokenizer.ts"
+      ],
+      "confidence": "EXTRACTED",
+      "relation": "calls",
+      "why": "bridges separate communities"
+    },
+    {
+      "source": "ResizableWorkspacePage()",
+      "target": "bytesOf()",
+      "source_files": [
+        "src/dashboard.tsx",
+        "src/data.ts"
+      ],
+      "confidence": "EXTRACTED",
+      "relation": "calls",
+      "why": "cross-file semantic connection"
+    },
+    {
+      "source": "ResizableWorkspacePage()",
+      "target": "linesOf()",
+      "source_files": [
+        "src/dashboard.tsx",
+        "src/data.ts"
+      ],
+      "confidence": "EXTRACTED",
+      "relation": "calls",
+      "why": "cross-file semantic connection"
+    },
+    {
+      "source": "ResizableWorkspacePage()",
+      "target": "listRuns()",
+      "source_files": [
+        "src/dashboard.tsx",
+        "src/data.ts"
       ],
       "confidence": "EXTRACTED",
       "relation": "calls",
@@ -271,38 +408,38 @@
   "questions": [
     {
       "type": "bridge_node",
-      "question": "Why does `react` connect `neutralTheme.ts` to `app.tsx`, `package.json`, `ai-chat.tsx`, `file-explorer.tsx`, `shell-nav.tsx`, `ide.tsx`?",
-      "why": "High betweenness centrality (0.463) - this node is a cross-community bridge."
+      "question": "Why does `react` connect `neutralTheme.ts` to `package.json`, `ai-chat.tsx`, `file-explorer.tsx`, `shell-nav.tsx`, `dashboard.tsx`?",
+      "why": "High betweenness centrality (0.242) - this node is a cross-community bridge."
     },
     {
       "type": "bridge_node",
       "question": "Why does `dependencies` connect `dependencies` to `package.json`?",
-      "why": "High betweenness centrality (0.066) - this node is a cross-community bridge."
-    },
-    {
-      "type": "bridge_node",
-      "question": "Why does `devDependencies` connect `devDependencies` to `package.json`?",
-      "why": "High betweenness centrality (0.047) - this node is a cross-community bridge."
+      "why": "High betweenness centrality (0.032) - this node is a cross-community bridge."
     },
     {
       "type": "isolated_nodes",
-      "question": "What connects `Chunk`, `Case`, `Check` to the rest of the system?",
-      "why": "90 weakly-connected nodes found - possible documentation gaps or missing edges."
-    },
-    {
-      "type": "low_cohesion",
-      "question": "Should `app.tsx` be split into smaller, more focused modules?",
-      "why": "Cohesion score 0.13852813852813853 - nodes in this community are weakly interconnected."
+      "question": "What connects `Chunk`, `Run`, `Attempt` to the rest of the system?",
+      "why": "129 weakly-connected nodes found - possible documentation gaps or missing edges."
     },
     {
       "type": "low_cohesion",
       "question": "Should `package.json` be split into smaller, more focused modules?",
-      "why": "Cohesion score 0.1 - nodes in this community are weakly interconnected."
+      "why": "Cohesion score 0.06896551724137931 - nodes in this community are weakly interconnected."
     },
     {
       "type": "low_cohesion",
       "question": "Should `compilerOptions` be split into smaller, more focused modules?",
       "why": "Cohesion score 0.14285714285714285 - nodes in this community are weakly interconnected."
+    },
+    {
+      "type": "low_cohesion",
+      "question": "Should `neutralTheme.ts` be split into smaller, more focused modules?",
+      "why": "Cohesion score 0.13071895424836602 - nodes in this community are weakly interconnected."
+    },
+    {
+      "type": "low_cohesion",
+      "question": "Should `RUNBOOK — Grader Dashboard (standalone, Bun + Astryx only)` be split into smaller, more focused modules?",
+      "why": "Cohesion score 0.09090909090909091 - nodes in this community are weakly interconnected."
     }
   ]
 }
