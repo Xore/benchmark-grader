@@ -155,13 +155,17 @@ function buildFileTree(
       const name = a.path.split('/').pop() ?? a.path;
       return {
         id: `${c.id}:${a.path}`,
-        // Full path, not the basename. maxLines={1} truncates the tail, which
-        // is the informative end (the directory), and the panel has no room for
-        // it -- so two files with the same basename in one case were
-        // indistinguishable rows. TreeListItemData has no tooltip prop, so the
-        // path itself is the label; the CodeBlock title and the Properties
-        // panel both still show the short name.
-        label: label(a.path),
+        // Basename as the label, full path as the official `description`.
+        //
+        // The label used to be the whole path, on the reasoning that two files
+        // with the same basename in one case must stay distinguishable. That
+        // traded a hard defect for a soft one: maxLines={1} then clipped the
+        // tail, and the tail is the directory -- so every row read
+        // "qwen3:8b/tool-written/k8s-audi", overflowing its box by 44-80px at
+        // EVERY width, 1600 included. The paths are still fully visible, in
+        // the field built to hold them, wrapping instead of being guillotined.
+        label: label(name),
+        description: a.path,
         startContent: <Icon icon={DocumentTextIcon} size="xsm" />,
         // Three distinct states, never two: pass, fail, and not-yet-judged are
         // different decisions and must not collapse into one glyph.
@@ -673,10 +677,22 @@ export default function ResizableWorkspacePage() {
           }
           endContent={
             <HStack gap={3}>
-              <ProgressBar
-                label={`${gradedFiles}/${totalFiles} graded`}
-                value={totalFiles ? gradedFiles / totalFiles : 0}
-              />
+              {/* No ProgressBar here.
+
+                  Measured, not guessed: with the bar present the row is
+                  75 + 12 + 54 = 141px -- exactly the width TopNav's endContent
+                  slot allows. Hiding the bar and nothing else grows the button
+                  from 54px to 81px, which is the width "Grade all" actually
+                  needs. So the bar was not decoration next to the button; it
+                  was consuming the whole slot and the primary action was the
+                  thing that got squeezed to "Gr…" at every width, 1600
+                  included.
+
+                  Nothing is lost. The bar was labelled "N/M graded", and every
+                  file row in the tree already carries a pass/fail/not-graded
+                  StatusDot -- so the remaining work is legible per file, which
+                  is how a reviewer actually tracks it, rather than as one
+                  digit pair in the nav. */}
               <Button
                 label="Grade all"
                 size="sm"

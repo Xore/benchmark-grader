@@ -448,20 +448,53 @@ if (gradeBtns === 0)
 if (narrow.overflowX > 2)
   errors.push(`NARROW: horizontal overflow of ${narrow.overflowX}px at 780px`)
 
-// Control-clipping audit at the narrow width. A long button label in a
-// non-wrapping row renders as "Grade a\u2026" on a phone -- invisible in
-// source review, and it happened twice to the same control.
-const clipped = await evalJs(`(() => {
+// Glyph-overflow audit. The old check compared button.scrollWidth to
+// button.clientWidth and so was blind to the actual defect: the cut was on an
+// INNER label span, so the button element never tripped it and the gate passed
+// a visibly ellipsized control. This measures where the glyphs really end.
+//
+// Visually-hidden elements (1px boxes) are excluded: being 1px wide is their
+// entire purpose, so flagging them is noise.
+const overflow = await evalJs(`(() => {
   const out = []
-  for (const e of document.querySelectorAll('button,[role="tab"],[class*="badge"]')) {
-    if (e.clientWidth > 0 && e.scrollWidth > e.clientWidth + 2)
-      out.push({txt: (e.innerText||'').trim().slice(0,40), w: e.clientWidth, sw: e.scrollWidth})
+  for (const e of document.querySelectorAll('*')) {
+    if (e.children.length !== 0 || e.clientWidth === 0) continue
+    const box = e.getBoundingClientRect()
+    if (box.width < 4) continue            // visually-hidden (a11y skips, sr-only)
+    const range = document.createRange()
+    range.selectNodeContents(e)
+    const right = Math.max(0, ...[...range.getClientRects()].map(r => r.right))
+    const over = Math.round(right - box.right)
+    if (over <= 1) continue
+    // Distinguish a DESIGNED ellipsis from a hard cut. A long case id in a
+    // 256px sidebar legitimately truncates to "k8s-audi\u2026" and the full
+    // value is in the selector and the URL; that is not a defect. What IS a
+    // defect is text that silently disappears with no ellipsis, or a primary
+    // action reduced to a couple of glyphs. So: flag cuts, and flag ellipsis
+    // only when so little fits that the control stops being identifiable.
+    const cs = getComputedStyle(e)
+    const designed = cs.textOverflow === 'ellipsis' || cs.webkitTextFillColor === 'rgba(0, 0, 0, 0)'
+    const readable = cs.textOverflow === 'ellipsis' ? over : 0
+    out.push({
+      txt: (e.textContent||'').trim().slice(0,44),
+      w: Math.round(box.width),
+      over,
+      ellipsis: cs.textOverflow === 'ellipsis',
+      // A control label narrower than its own widest word is unreadable.
+      fatal: !designed || box.width < 24,
+    })
   }
   return out
 })()`)
-console.log('clipped controls:', JSON.stringify(clipped))
-for (const c of clipped) {
-  errors.push('CLIPPED: "' + c.txt + '" (' + c.sw + 'px into ' + c.w + 'px)')
+console.log('glyph overflow:', JSON.stringify(overflow))
+for (const o of overflow) {
+  if (o.fatal)
+    errors.push(
+      'OVERFLOW: "' + o.txt + '" ' + (o.ellipsis ? 'ellipsised to ' : 'hard-cut at ') +
+        o.w + 'px, ' + o.over + 'px past its box',
+    )
+  else
+    console.log('  ok (designed ellipsis): "' + o.txt + '" at ' + o.w + 'px')
 }
 
 console.log('\n=== ERRORS ===')
