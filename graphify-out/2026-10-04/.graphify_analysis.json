@@ -1,0 +1,308 @@
+{
+  "communities": {
+    "0": [
+      "src_answer_chunks",
+      "src_answer_chunks_chunk",
+      "src_answer_chunks_chunkanswer",
+      "src_answer_chunks_codescore",
+      "src_answer_chunks_iscode",
+      "src_answer_chunks_issentence",
+      "src_app",
+      "src_app_app",
+      "src_app_case",
+      "src_app_caselang",
+      "src_app_centered",
+      "src_app_check",
+      "src_app_corpus",
+      "src_app_get",
+      "src_app_gradebuttons",
+      "src_app_grademap",
+      "src_app_lang",
+      "src_app_langof",
+      "src_app_num",
+      "src_app_roundmessage",
+      "src_app_run",
+      "src_app_turn"
+    ],
+    "1": [
+      "package",
+      "package_astryx",
+      "package_astryx_theme",
+      "package_name",
+      "package_private",
+      "package_scripts",
+      "package_scripts_dev",
+      "package_scripts_start",
+      "package_type",
+      "ref_astryxdesign_cli",
+      "ref_astryxdesign_core",
+      "ref_astryxdesign_theme_neutral",
+      "ref_heroicons_react",
+      "ref_react_dom",
+      "ref_shiki",
+      "ref_stylexjs_stylex",
+      "ref_types_bun",
+      "ref_types_react",
+      "ref_types_react_dom",
+      "ref_typescript"
+    ],
+    "2": [
+      "tsconfig",
+      "tsconfig_compileroptions",
+      "tsconfig_compileroptions_allowimportingtsextensions",
+      "tsconfig_compileroptions_jsx",
+      "tsconfig_compileroptions_lib",
+      "tsconfig_compileroptions_module",
+      "tsconfig_compileroptions_moduleresolution",
+      "tsconfig_compileroptions_noemit",
+      "tsconfig_compileroptions_paths",
+      "tsconfig_compileroptions_skiplibcheck",
+      "tsconfig_compileroptions_strict",
+      "tsconfig_compileroptions_target",
+      "tsconfig_compileroptions_types",
+      "tsconfig_include"
+    ],
+    "3": [
+      "tmpl_ai_chat",
+      "tmpl_ai_chat_aichatconversationtemplate",
+      "tmpl_ai_chat_articlebody",
+      "tmpl_ai_chat_artifactactions",
+      "tmpl_ai_chat_artifactbody",
+      "tmpl_ai_chat_artifactcard",
+      "tmpl_ai_chat_artifactpanelwidthvar",
+      "tmpl_ai_chat_artifactscroll",
+      "tmpl_ai_chat_chatcolumn",
+      "tmpl_ai_chat_chatlayout",
+      "tmpl_ai_chat_mention_tokens",
+      "tmpl_ai_chat_mobileartifactactions",
+      "tmpl_ai_chat_root"
+    ],
+    "4": [
+      "ref_react",
+      "src_themes_neutral_icons",
+      "src_themes_neutral_icons_iconprops",
+      "src_themes_neutral_icons_neutraliconregistry",
+      "src_themes_neutral_neutralpaletterefs_generated",
+      "src_themes_neutral_neutralpaletterefs_generated_neutralpaletterefs",
+      "src_themes_neutral_neutraltheme",
+      "src_themes_neutral_neutraltheme_neutrallocaltokens",
+      "src_themes_neutral_neutraltheme_neutralsyntax",
+      "src_themes_neutral_neutraltheme_neutraltheme",
+      "src_themes_neutral_neutraltheme_statusfill",
+      "src_themes_neutral_neutraltheme_withalpha"
+    ],
+    "5": [
+      "src_shiki_tokenizer",
+      "src_shiki_tokenizer_alias",
+      "src_shiki_tokenizer_cache",
+      "src_shiki_tokenizer_grammars",
+      "src_shiki_tokenizer_ready",
+      "src_shiki_tokenizer_requirehighlighter",
+      "src_shiki_tokenizer_scope_map",
+      "src_shiki_tokenizer_scopetotype",
+      "src_shiki_tokenizer_token",
+      "src_shiki_tokenizer_token_types",
+      "src_shiki_tokenizer_tokenize"
+    ],
+    "6": [
+      "tmpl_file_explorer",
+      "tmpl_file_explorer_columnrow",
+      "tmpl_file_explorer_detailcolumn",
+      "tmpl_file_explorer_fileexplorerpage",
+      "tmpl_file_explorer_filesystem",
+      "tmpl_file_explorer_filesystemitem",
+      "tmpl_file_explorer_finditem",
+      "tmpl_file_explorer_fixedcolumn",
+      "tmpl_file_explorer_getfileextension",
+      "tmpl_file_explorer_page",
+      "tmpl_file_explorer_scrollable"
+    ],
+    "7": [
+      "tmpl_shell_nav",
+      "tmpl_shell_nav_code_lines",
+      "tmpl_shell_nav_commands",
+      "tmpl_shell_nav_editor_tabs",
+      "tmpl_shell_nav_file",
+      "tmpl_shell_nav_file_tree",
+      "tmpl_shell_nav_folder",
+      "tmpl_shell_nav_menuentry",
+      "tmpl_shell_nav_menus",
+      "tmpl_shell_nav_noop",
+      "tmpl_shell_nav_shellnav"
+    ],
+    "8": [
+      "verify",
+      "verify_artifactcount",
+      "verify_clicktext",
+      "verify_errors",
+      "verify_evaluate",
+      "verify_pending",
+      "verify_proc",
+      "verify_results",
+      "verify_send",
+      "verify_sleep",
+      "verify_ws"
+    ],
+    "9": [
+      "package_dependencies",
+      "package_dependencies_astryxdesign_core",
+      "package_dependencies_astryxdesign_theme_neutral",
+      "package_dependencies_heroicons_react",
+      "package_dependencies_react",
+      "package_dependencies_react_dom",
+      "package_dependencies_shiki",
+      "package_dependencies_stylexjs_stylex"
+    ],
+    "10": [
+      "server",
+      "server_fetch",
+      "server_json",
+      "server_mime",
+      "server_port",
+      "server_run",
+      "server_runs"
+    ],
+    "11": [
+      "package_devdependencies",
+      "package_devdependencies_astryxdesign_cli",
+      "package_devdependencies_types_bun",
+      "package_devdependencies_types_react",
+      "package_devdependencies_types_react_dom",
+      "package_devdependencies_typescript"
+    ],
+    "12": [
+      "src_themes_neutral_neutralpalettes",
+      "src_themes_neutral_neutralpalettes_generated",
+      "src_themes_neutral_neutralpalettes_generated_black",
+      "src_themes_neutral_neutralpalettes_generated_palette",
+      "src_themes_neutral_neutralpalettes_generated_white",
+      "src_themes_neutral_neutralpalettes_neutralpalettes"
+    ],
+    "13": [
+      "tmpl_ide",
+      "tmpl_ide_buildfiletree",
+      "tmpl_ide_history_items",
+      "tmpl_ide_properties",
+      "tmpl_ide_resizableworkspacepage",
+      "tmpl_ide_styles"
+    ]
+  },
+  "cohesion": {
+    "0": 0.13852813852813853,
+    "1": 0.1,
+    "2": 0.14285714285714285,
+    "3": 0.16666666666666666,
+    "4": 0.19696969696969696,
+    "5": 0.21818181818181817,
+    "6": 0.21818181818181817,
+    "7": 0.18181818181818182,
+    "8": 0.2545454545454545,
+    "9": 0.25,
+    "10": 0.42857142857142855,
+    "11": 0.3333333333333333,
+    "12": 0.5333333333333333,
+    "13": 0.4
+  },
+  "gods": [
+    {
+      "id": "tsconfig_compileroptions",
+      "label": "compilerOptions",
+      "degree": 12
+    },
+    {
+      "id": "ref_react",
+      "label": "react",
+      "degree": 7
+    },
+    {
+      "id": "src_answer_chunks_chunkanswer",
+      "label": "chunkAnswer()",
+      "degree": 4
+    },
+    {
+      "id": "src_app_app",
+      "label": "App()",
+      "degree": 4
+    },
+    {
+      "id": "src_app_roundmessage",
+      "label": "RoundMessage()",
+      "degree": 4
+    },
+    {
+      "id": "server_fetch",
+      "label": "fetch()",
+      "degree": 4
+    },
+    {
+      "id": "src_shiki_tokenizer_tokenize",
+      "label": "tokenize()",
+      "degree": 4
+    },
+    {
+      "id": "verify_evaluate",
+      "label": "evaluate()",
+      "degree": 4
+    },
+    {
+      "id": "src_answer_chunks_codescore",
+      "label": "codeScore()",
+      "degree": 3
+    },
+    {
+      "id": "src_answer_chunks_iscode",
+      "label": "isCode()",
+      "degree": 3
+    }
+  ],
+  "surprises": [
+    {
+      "source": "RoundMessage()",
+      "target": "chunkAnswer()",
+      "source_files": [
+        "src/app.tsx",
+        "src/answer-chunks.ts"
+      ],
+      "confidence": "EXTRACTED",
+      "relation": "calls",
+      "why": "cross-file semantic connection"
+    }
+  ],
+  "questions": [
+    {
+      "type": "bridge_node",
+      "question": "Why does `react` connect `neutralTheme.ts` to `app.tsx`, `package.json`, `ai-chat.tsx`, `file-explorer.tsx`, `shell-nav.tsx`, `ide.tsx`?",
+      "why": "High betweenness centrality (0.463) - this node is a cross-community bridge."
+    },
+    {
+      "type": "bridge_node",
+      "question": "Why does `dependencies` connect `dependencies` to `package.json`?",
+      "why": "High betweenness centrality (0.066) - this node is a cross-community bridge."
+    },
+    {
+      "type": "bridge_node",
+      "question": "Why does `devDependencies` connect `devDependencies` to `package.json`?",
+      "why": "High betweenness centrality (0.047) - this node is a cross-community bridge."
+    },
+    {
+      "type": "isolated_nodes",
+      "question": "What connects `Chunk`, `Case`, `Check` to the rest of the system?",
+      "why": "90 weakly-connected nodes found - possible documentation gaps or missing edges."
+    },
+    {
+      "type": "low_cohesion",
+      "question": "Should `app.tsx` be split into smaller, more focused modules?",
+      "why": "Cohesion score 0.13852813852813853 - nodes in this community are weakly interconnected."
+    },
+    {
+      "type": "low_cohesion",
+      "question": "Should `package.json` be split into smaller, more focused modules?",
+      "why": "Cohesion score 0.1 - nodes in this community are weakly interconnected."
+    },
+    {
+      "type": "low_cohesion",
+      "question": "Should `compilerOptions` be split into smaller, more focused modules?",
+      "why": "Cohesion score 0.14285714285714285 - nodes in this community are weakly interconnected."
+    }
+  ]
+}

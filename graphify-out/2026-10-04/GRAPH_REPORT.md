@@ -1,7 +1,8 @@
 # Graph Report - benchmark-grader  (2026-10-04)
 
 ## Corpus Check
-- cluster-only mode — file stats not available
+- 27 files · ~28,870 words
+- Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
 - 236 nodes · 300 edges · 19 communities (17 shown, 1 thin omitted)
@@ -40,9 +41,9 @@
 4. `benchmark-grader` - 9 edges
 5. `loadRun()` - 8 edges
 6. `react` - 7 edges
-7. `json()` - 6 edges
+7. `scripts` - 6 edges
 8. `fetch()` - 6 edges
-9. `scripts` - 6 edges
+9. `json()` - 6 edges
 10. `The 3-step contract (docs/working-with-ai) — this is the whole thing` - 6 edges
 
 ## Surprising Connections (you probably didn't know these)
@@ -131,7 +132,7 @@ Cohesion: 0.24
 Nodes (10): cdp, clickText(), CRAMPED, DESKTOP, errors, evalJs(), Msg, sleep() (+2 more)
 
 ## Knowledge Gaps
-- **129 isolated node(s):** `Chunk`, `Run`, `Attempt`, `GradeBook`, `Rubric` (+124 more)
+- **129 isolated node(s):** `name`, `private`, `type`, `start`, `dev` (+124 more)
   These have ≤1 connection - possible missing edges or undocumented components. (Counts symbols only; 144 node(s) total have ≤1 connection when file, concept and rationale nodes are included.)
 - **1 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
@@ -142,7 +143,7 @@ _Questions this graph is uniquely positioned to answer:_
   _High betweenness centrality (0.242) - this node is a cross-community bridge._
 - **Why does `dependencies` connect `dependencies` to `package.json`?**
   _High betweenness centrality (0.032) - this node is a cross-community bridge._
-- **What connects `Chunk`, `Run`, `Attempt` to the rest of the system?**
+- **What connects `name`, `private`, `type` to the rest of the system?**
   _129 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `package.json` be split into smaller, more focused modules?**
   _Cohesion score 0.06896551724137931 - nodes in this community are weakly interconnected._
