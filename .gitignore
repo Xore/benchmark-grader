@@ -1,0 +1,17 @@
+node_modules/
+dist/
+build/
+
+.env
+.env.*
+!.env.example
+
+*.log
+.DS_Store
+
+# local benchmark run data (server reads from RUN_DIR, default /tmp/roster-run)
+roster-run/
+run-data/
+transcripts/
+grades/
+coder-artifacts/
