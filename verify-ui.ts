@@ -8,12 +8,20 @@
 // uncaught error. A fetch-based smoke test cannot see it. This drives a real
 // Chrome, clicks every tab with real mouse events, and fails on any error.
 //
-// ponytail: binds 192.168.42.253 because the higher-level browser tool refuses
-// private/loopback targets. Chrome itself has no such restriction; localhost
-// would work here. The LAN IP is the one moving part -- override with UI_HOST.
+// ponytail: binds 127.0.0.1 because the server hardcodes hostname '0.0.0.0'
+// (serve.ts), so loopback is the canonical URL. Chrome has no restriction on
+// loopback targets; the browser TOOL does, which is what the old LAN IP was
+// working around. Override with UI_HOST.
 
-const HOST = process.env.UI_HOST ?? 'http://192.168.42.253:3020'
-const CDP = 'http://127.0.0.1:9222'
+const HOST = process.env.UI_HOST ?? 'http://127.0.0.1:3020'
+// ponytail: launch our OWN chrome on a free port instead of attaching to a
+// shared :9222. Attaching meant a stale tab left by any other process (or a
+// concurrent run of this same script) wedged the endpoint, and the failure
+// surfaced as a bare "timeout: Runtime.evaluate" that looks like a page bug
+// but is not. An isolated browser removes the failure mode entirely.
+const CHROME = process.env.CHROME ?? 'google-chrome'
+const DEBUG_PORT = Number(process.env.UI_CDP_PORT ?? 9333)
+const CDP = `http://127.0.0.1:${DEBUG_PORT}`
 const sleep = (ms: number) => new Promise(r => setTimeout(r, ms))
 
 const errors: string[] = []
@@ -55,6 +63,38 @@ function attach(wsUrl: string) {
 
 // Tabs from earlier runs keep the page alive but detached; without this the
 // target list grows until chrome stops handing out websockets.
+// Own browser for this run only. --remote-debugging-port binds 127.0.0.1
+// explicitly so it cannot collide with another chrome on the box.
+const chrome = Bun.spawn(
+  [
+    CHROME,
+    '--headless=new',
+    `--remote-debugging-port=${DEBUG_PORT}`,
+    '--remote-debugging-address=127.0.0.1',
+    '--user-data-dir=' + (await import('fs')).mkdtempSync('/tmp/verify-ui-'),
+    '--no-sandbox',
+    '--disable-gpu',
+    'about:blank',
+  ],
+  {stdout: 'ignore', stderr: 'ignore'},
+)
+
+// Wait for the endpoint to answer instead of firing a request into a browser
+// that has not finished booting -- that race is what surfaced as a 15s
+// "timeout: Runtime.evaluate" rather than as "chrome never started".
+let up = false
+for (let i = 0; i < 60 && !up; i++) {
+  await sleep(250)
+  up = await fetch(`${CDP}/json/version`)
+    .then(r => r.ok)
+    .catch(() => false)
+}
+if (!up) {
+  console.error(`chrome never came up on ${CDP}`)
+  chrome.kill('SIGKILL')
+  process.exit(2)
+}
+
 for (const t of await (await fetch(`${CDP}/json/list`)).json()) {
   if (t.type === 'page' && t.url.includes(':3020')) {
     await fetch(`${CDP}/json/close/${t.id}`).catch(() => {})
@@ -87,8 +127,16 @@ cdp.on(m => {
     errors.push(
       'CONSOLE ' + m.params.args.map((a: any) => a.value ?? a.description).join(' '),
     )
-  if (m.method === 'Log.entryAdded' && m.params.entry.level === 'error')
-    errors.push('LOG ' + m.params.entry.text + ' ' + (m.params.entry.url ?? ''))
+  if (m.method === 'Log.entryAdded' && m.params.entry.level === 'error') {
+    const url = m.params.entry.url ?? ''
+    // ponytail: exclude favicon. The app never shipped one, so a cold browser
+    // always requests /favicon.ico and always 404s. This gate used to pass only
+    // because the shared :9222 browser had it cached from some earlier session
+    // -- with its own cold browser the false positive is exposed. Every other
+    // error-level log entry still fails the run.
+    if (url.includes('/favicon.ico')) return
+    errors.push('LOG ' + m.params.entry.text + ' ' + url)
+  }
 })
 
 // Real mouse click: el.click() does not drive Astryx's TabList reliably, and a
@@ -500,4 +548,7 @@ for (const o of overflow) {
 console.log('\n=== ERRORS ===')
 console.log(errors.length ? errors.join('\n') : '(none)')
 cdp.close()
+// Take our own browser down with us. The old shared-:9222 setup leaked the
+// browser and every tab in it, which is exactly what wedged later runs.
+chrome?.kill('SIGKILL')
 process.exit(errors.length ? 1 : 0)

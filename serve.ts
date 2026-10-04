@@ -331,10 +331,18 @@ function listRuns(): string[] {
 function readGrades(): Record<string, unknown> {
   const raw = safeRead(GRADES_FILE)
   if (!raw) return {}
+  // ponytail: THROW on corrupt JSON rather than returning {}. Returning {} made
+  // a truncated grades.json look like "nothing graded yet": the UI got a 200
+  // with an empty object and its `.catch(() => setGrades({}))` could not
+  // distinguish that from success, so the next save overwrote the file and
+  // every prior grade was gone with no error anywhere. A 500 the caller can
+  // see beats silent data loss.
   try {
     return JSON.parse(raw)
-  } catch {
-    return {}
+  } catch (e) {
+    throw new Error(
+      `grades.json is not valid JSON: ${(e as Error).message}`,
+    )
   }
 }
 
@@ -495,7 +503,14 @@ Bun.serve({
     }
 
     if (p === '/api/grades') {
-      if (req.method === 'GET') return Response.json(readGrades())
+      // readGrades throws on a corrupt grades.json. Surface it as a 500 rather
+      // than letting it escape as an unhandled rejection: the caller must be
+      // able to tell "corrupt" from "nothing graded yet".
+      try {
+        if (req.method === 'GET') return Response.json(readGrades())
+      } catch (e) {
+        return new Response((e as Error).message, {status: 500})
+      }
       if (req.method === 'POST') {
         const body = (await req.json()) as Record<string, unknown>
         // Trust boundary. The UI only ever sends 1 | 0 | null, but the endpoint
@@ -510,6 +525,18 @@ Bun.serve({
           body.score !== 1
         )
           return new Response('score must be 0, 1 or null', {status: 400})
+        // Read the grades file BEFORE taking the lock: a corrupt file must
+        // refuse the write outright, never be silently replaced by a fresh
+        // one-file document. Guard the whole handler too -- an inner readGrades
+        // re-read inside the lock can also throw, and an uncaught throw here
+        // escapes to the SPA fallback, which returns HTML with a 200 and hides
+        // the failure completely.
+        try {
+          readGrades()
+        } catch (e) {
+          return new Response((e as Error).message, {status: 500})
+        }
+        try {
         // The read and the write must be one critical section, or a concurrent
         // writer's grade is silently overwritten. `all` is re-read INSIDE the
         // lock: reading it before would keep a stale snapshot either way.
@@ -562,6 +589,9 @@ Bun.serve({
 
           return Response.json({ok: true})
         })
+        } catch (e) {
+          return new Response((e as Error).message, {status: 500})
+        }
       }
       return new Response('method not allowed', {status: 405})
     }

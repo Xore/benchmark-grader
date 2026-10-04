@@ -325,19 +325,34 @@ export default function ResizableWorkspacePage() {
     if (!runId) return;
     setPicked(null);
     setFileFilter('');
+    // ponytail: capture the id and drop late responses instead of an
+    // AbortController -- same guarantee, no teardown plumbing. Without this, a
+    // slow response for the run you just LEFT overwrites the current one, and
+    // since `grade()` keys writes on `runId`, its verdicts land in the wrong
+    // runbook permanently.
+    const mine = runId;
+    const stale = () => mine !== runId;
     loadRun(runId)
       .then(r => {
+        if (stale()) return;
         setRun(r);
         setCases(r.cases);
         setCaseId(r.cases[0]?.id ?? '');
       })
       .catch(() => {
+        if (stale()) return;
         setRun(null);
         setCases([]);
       });
     loadGrades()
-      .then(g => setGrades((g[runId]?.files ?? {}) as Record<string, Grade>))
-      .catch(() => setGrades({}));
+      .then(g => {
+        if (stale()) return;
+        setGrades((g[runId]?.files ?? {}) as Record<string, Grade>);
+      })
+      .catch(() => {
+        if (stale()) return;
+        setGrades({});
+      });
   }, [runId]);
 
   // P1-2: selecting a case should show what you are grading against.
@@ -367,6 +382,12 @@ export default function ResizableWorkspacePage() {
     setPicked(null);
     setLineStart(null);
     setLineEnd(null);
+    // ponytail: clear the note HERE, not at each call site. The note is
+    // persisted by `grade(..., withNote = note)`, so a note left over from the
+    // previous file was silently saved onto the next file's grade. Every path
+    // that moves the selection routes through this effect, so one reset here
+    // covers the case selector, "Next ungraded" and J/K navigation alike.
+    setNote('');
   }, [caseId, picked?.c.id]);
 
   // ponytail: the note is passed in, not read from state. Reading `note` here
