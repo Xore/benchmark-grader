@@ -1429,6 +1429,17 @@ export default function ResizableWorkspacePage() {
                                         />
                                       </HStack>
                                     )}
+                                    {/* Shortcuts existed only as a code comment.
+                                        Its own row below the button row, NOT
+                                        inside the HStack: in-row it took width
+                                        from Pass/Fail/Clear and crushed them to
+                                        15/11/16px at the cramped viewport. */}
+                                    {picked && (
+                                      <Text type="supporting" color="secondary">
+                                        Keys: P pass · F fail · C clear · J/K
+                                        next/prev · Enter next ungraded
+                                      </Text>
+                                    )}
                                     {PROPERTIES.map(prop => (
                                       <MetadataListItem
                                         key={prop.label}

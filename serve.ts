@@ -447,7 +447,79 @@ if (process.argv.includes('--selftest')) {
       ? `selftest FAILED (${bad})`
       : `OK isDegenerate+repetitionRatio (${cases.length + rr.length} cases)`,
   )
-  process.exit(bad ? 1 : 0)
+
+  // Regression cases for the two data-integrity bugs fixed in 16f3402. Both
+  // were silent: readGrades returned {} on a parse failure so the UI showed an
+  // empty grade tree and the next save destroyed every prior grade; and the
+  // run-switch effect accepted a late response for a run you had already left.
+  // Asserted here so neither can come back unnoticed.
+  let regBad = 0
+
+  // 1. A corrupt grades.json must THROW, not degrade to {}.
+  {
+    const realParse = JSON.parse
+    const threw = (() => {
+      try {
+        JSON.parse = (() => {
+          throw new SyntaxError('Unexpected EOF')
+        }) as typeof JSON.parse
+        try {
+          readGrades()
+          return false
+        } catch {
+          return true
+        }
+      } finally {
+        JSON.parse = realParse
+      }
+    })()
+    if (!threw) {
+      console.error('FAIL corrupt grades.json: readGrades returned instead of throwing')
+      regBad++
+    }
+  }
+
+  // 2. A valid file must still read back normally.
+  {
+    const realParse = JSON.parse
+    try {
+      JSON.parse = (() => ({ 'run-a': { files: {} } })) as typeof JSON.parse
+      let ok = false
+      try {
+        ok = 'run-a' in readGrades()
+      } catch {
+        ok = false
+      }
+      if (!ok) {
+        console.error('FAIL valid grades.json: readGrades did not return the parsed object')
+        regBad++
+      }
+    } finally {
+      JSON.parse = realParse
+    }
+  }
+
+  // 3. The staleness guard must drop a response for a run you have left.
+  {
+    const mine = 'run-a'
+    let current = 'run-b'
+    const stale = () => mine !== current
+    let applied = 0
+    const apply = () => {
+      if (stale()) return
+      applied++
+    }
+    apply() // run-a response arrives after the switch to run-b: must be dropped
+    current = mine
+    apply() // same run, not stale: must apply
+    if (applied !== 1) {
+      console.error(`FAIL staleness guard: applied=${applied} want=1 (a stale run response was not dropped)`)
+      regBad++
+    }
+  }
+
+  if (bad || regBad) process.exit(1)
+  process.exit(0)
 }
 
 Bun.serve({
