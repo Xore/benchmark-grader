@@ -1,0 +1,290 @@
+{
+  "schemaVersion": 1,
+  "ok": false,
+  "command": "finalize",
+  "status": "fail",
+  "type": "architecture",
+  "quality": "showcase",
+  "startedAt": "2026-10-04T01:26:47.249Z",
+  "specification": {
+    "path": "/home/xore/Desktop/benchmark-grader/.archify/architecture-benchmark-grader-20261004-032605/candidate.json",
+    "sha256": "1f24a1b3e445367c99a3dea2ce7e1274178066e05d83795c6a4144fc06db3adc",
+    "bytes": 9939
+  },
+  "artifact": {
+    "path": "/home/xore/Desktop/benchmark-grader/.archify/architecture-benchmark-grader-20261004-032605/benchmark-grader.html"
+  },
+  "stages": {
+    "validate": {
+      "status": "fail",
+      "exitCode": 1,
+      "durationMs": null,
+      "command": [
+        "/home/xore/.hermes/tools/node-26.7.0-linux-x64/bin/node",
+        "/home/xore/.agents/skills/archify/bin/archify.mjs",
+        "deliver",
+        "architecture",
+        "/home/xore/Desktop/benchmark-grader/.archify/architecture-benchmark-grader-20261004-032605/candidate.json",
+        "/home/xore/Desktop/benchmark-grader/.archify/architecture-benchmark-grader-20261004-032605/benchmark-grader.html",
+        "--quality",
+        "showcase",
+        "--repo-root",
+        "/home/xore/Desktop/benchmark-grader",
+        "--json"
+      ],
+      "receipt": {
+        "schemaVersion": 1,
+        "ok": false,
+        "command": "deliver",
+        "receiptId": "677799a2-f781-494b-a2f2-9d6ae62195d8",
+        "stage": "render",
+        "type": "architecture",
+        "input": "/home/xore/Desktop/benchmark-grader/.archify/architecture-benchmark-grader-20261004-032605/candidate.json",
+        "output": "/home/xore/Desktop/benchmark-grader/.archify/architecture-benchmark-grader-20261004-032605/benchmark-grader.html",
+        "error": "Architecture layout validation failed:\n- [composition/label-route-clearance] showcase architecture label \"GET / POST\" on connections[4] id \"server-grades\" \"server\" -> \"grades\" label \"GET / POST\" is 0px from connections[5] id \"server-corpus\" \"server\" -> \"corpus\" label \"in-memory, no route\" segment 1 [353, 441] -> [468, 441] (label rect [379, 429, 58, 14]; minimum 4px) — if the authored fromSide/toSide are not required by the user, remove them so the renderer can re-plan; otherwise preserve that intent and adjust labelAt, labelDx, labelDy, or labelSegment; otherwise adjust the other relationship route/via/channel.\n- [composition/label-route-clearance] showcase architecture label \"GET / POST\" on connections[4] id \"server-grades\" \"server\" -> \"grades\" label \"GET / POST\" is 0px from connections[11] id \"verify-server\" \"verify\" -> \"server\" label \"drives the live SPA\" segment 1 [424, 661] -> [424, 384] (label rect [379, 429, 58, 14]; minimum 4px) — if the authored fromSide/toSide are not required by the user, remove them so the renderer can re-plan; otherwise preserve that intent and adjust labelAt, labelDx, labelDy, or labelSegment; otherwise adjust the other relationship route/via/channel.",
+        "diagnostics": [
+          {
+            "code": "composition/label-route-clearance",
+            "severity": "error",
+            "message": "[composition/label-route-clearance] showcase architecture label \"GET / POST\" on connections[4] id \"server-grades\" \"server\" -> \"grades\" label \"GET / POST\" is 0px from connections[5] id \"server-corpus\" \"server\" -> \"corpus\" label \"in-memory, no route\" segment 1 [353, 441] -> [468, 441] (label rect [379, 429, 58, 14]; minimum 4px) — if the authored fromSide/toSide are not required by the user, remove them so the renderer can re-plan; otherwise preserve that intent and adjust labelAt, labelDx, labelDy, or labelSegment; otherwise adjust the other relationship route/via/channel.",
+            "subject": {
+              "diagramType": "architecture",
+              "collection": "connections",
+              "index": 4,
+              "id": "server-grades",
+              "from": "server",
+              "to": "grades"
+            },
+            "evidence": {
+              "label": "GET / POST",
+              "otherRelationship": {
+                "diagramType": "architecture",
+                "collection": "connections",
+                "index": 5,
+                "id": "server-corpus",
+                "from": "server",
+                "to": "corpus"
+              },
+              "segmentIndex": 1,
+              "clearancePx": 0,
+              "minimumPx": 4,
+              "labelRect": {
+                "relation": {
+                  "id": "server-grades",
+                  "from": "server",
+                  "to": "grades",
+                  "label": "GET / POST",
+                  "fromSide": "bottom",
+                  "toSide": "left"
+                },
+                "relationIndex": 4,
+                "label": "GET / POST",
+                "x": 378.5,
+                "y": 429,
+                "width": 58,
+                "height": 14,
+                "lx": 407.5,
+                "ly": 439
+              },
+              "from": [
+                353,
+                441
+              ],
+              "to": [
+                468,
+                441
+              ]
+            },
+            "supportedFixes": [
+              "if the authored fromSide/toSide are not required by the user, remove them so the renderer can re-plan; otherwise preserve that intent and adjust labelAt, labelDx, labelDy, or labelSegment; otherwise adjust the other relationship route/via/channel"
+            ]
+          },
+          {
+            "code": "composition/label-route-clearance",
+            "severity": "error",
+            "message": "[composition/label-route-clearance] showcase architecture label \"GET / POST\" on connections[4] id \"server-grades\" \"server\" -> \"grades\" label \"GET / POST\" is 0px from connections[11] id \"verify-server\" \"verify\" -> \"server\" label \"drives the live SPA\" segment 1 [424, 661] -> [424, 384] (label rect [379, 429, 58, 14]; minimum 4px) — if the authored fromSide/toSide are not required by the user, remove them so the renderer can re-plan; otherwise preserve that intent and adjust labelAt, labelDx, labelDy, or labelSegment; otherwise adjust the other relationship route/via/channel.",
+            "subject": {
+              "diagramType": "architecture",
+              "collection": "connections",
+              "index": 4,
+              "id": "server-grades",
+              "from": "server",
+              "to": "grades"
+            },
+            "evidence": {
+              "label": "GET / POST",
+              "otherRelationship": {
+                "diagramType": "architecture",
+                "collection": "connections",
+                "index": 11,
+                "id": "verify-server",
+                "from": "verify",
+                "to": "server"
+              },
+              "segmentIndex": 1,
+              "clearancePx": 0,
+              "minimumPx": 4,
+              "labelRect": {
+                "relation": {
+                  "id": "server-grades",
+                  "from": "server",
+                  "to": "grades",
+                  "label": "GET / POST",
+                  "fromSide": "bottom",
+                  "toSide": "left"
+                },
+                "relationIndex": 4,
+                "label": "GET / POST",
+                "x": 378.5,
+                "y": 429,
+                "width": 58,
+                "height": 14,
+                "lx": 407.5,
+                "ly": 439
+              },
+              "from": [
+                424,
+                661
+              ],
+              "to": [
+                424,
+                384
+              ]
+            },
+            "supportedFixes": [
+              "if the authored fromSide/toSide are not required by the user, remove them so the renderer can re-plan; otherwise preserve that intent and adjust labelAt, labelDx, labelDy, or labelSegment; otherwise adjust the other relationship route/via/channel"
+            ]
+          }
+        ],
+        "provenance": "absent"
+      },
+      "execution": "embedded-in-deliver"
+    },
+    "deliver": {
+      "status": "not-run",
+      "execution": "blocked-by-validate"
+    }
+  },
+  "diagnostics": [
+    {
+      "code": "composition/label-route-clearance",
+      "severity": "error",
+      "message": "[composition/label-route-clearance] showcase architecture label \"GET / POST\" on connections[4] id \"server-grades\" \"server\" -> \"grades\" label \"GET / POST\" is 0px from connections[5] id \"server-corpus\" \"server\" -> \"corpus\" label \"in-memory, no route\" segment 1 [353, 441] -> [468, 441] (label rect [379, 429, 58, 14]; minimum 4px) — if the authored fromSide/toSide are not required by the user, remove them so the renderer can re-plan; otherwise preserve that intent and adjust labelAt, labelDx, labelDy, or labelSegment; otherwise adjust the other relationship route/via/channel.",
+      "subject": {
+        "diagramType": "architecture",
+        "collection": "connections",
+        "index": 4,
+        "id": "server-grades",
+        "from": "server",
+        "to": "grades"
+      },
+      "evidence": {
+        "label": "GET / POST",
+        "otherRelationship": {
+          "diagramType": "architecture",
+          "collection": "connections",
+          "index": 5,
+          "id": "server-corpus",
+          "from": "server",
+          "to": "corpus"
+        },
+        "segmentIndex": 1,
+        "clearancePx": 0,
+        "minimumPx": 4,
+        "labelRect": {
+          "relation": {
+            "id": "server-grades",
+            "from": "server",
+            "to": "grades",
+            "label": "GET / POST",
+            "fromSide": "bottom",
+            "toSide": "left"
+          },
+          "relationIndex": 4,
+          "label": "GET / POST",
+          "x": 378.5,
+          "y": 429,
+          "width": 58,
+          "height": 14,
+          "lx": 407.5,
+          "ly": 439
+        },
+        "from": [
+          353,
+          441
+        ],
+        "to": [
+          468,
+          441
+        ]
+      },
+      "supportedFixes": [
+        "if the authored fromSide/toSide are not required by the user, remove them so the renderer can re-plan; otherwise preserve that intent and adjust labelAt, labelDx, labelDy, or labelSegment; otherwise adjust the other relationship route/via/channel"
+      ]
+    },
+    {
+      "code": "composition/label-route-clearance",
+      "severity": "error",
+      "message": "[composition/label-route-clearance] showcase architecture label \"GET / POST\" on connections[4] id \"server-grades\" \"server\" -> \"grades\" label \"GET / POST\" is 0px from connections[11] id \"verify-server\" \"verify\" -> \"server\" label \"drives the live SPA\" segment 1 [424, 661] -> [424, 384] (label rect [379, 429, 58, 14]; minimum 4px) — if the authored fromSide/toSide are not required by the user, remove them so the renderer can re-plan; otherwise preserve that intent and adjust labelAt, labelDx, labelDy, or labelSegment; otherwise adjust the other relationship route/via/channel.",
+      "subject": {
+        "diagramType": "architecture",
+        "collection": "connections",
+        "index": 4,
+        "id": "server-grades",
+        "from": "server",
+        "to": "grades"
+      },
+      "evidence": {
+        "label": "GET / POST",
+        "otherRelationship": {
+          "diagramType": "architecture",
+          "collection": "connections",
+          "index": 11,
+          "id": "verify-server",
+          "from": "verify",
+          "to": "server"
+        },
+        "segmentIndex": 1,
+        "clearancePx": 0,
+        "minimumPx": 4,
+        "labelRect": {
+          "relation": {
+            "id": "server-grades",
+            "from": "server",
+            "to": "grades",
+            "label": "GET / POST",
+            "fromSide": "bottom",
+            "toSide": "left"
+          },
+          "relationIndex": 4,
+          "label": "GET / POST",
+          "x": 378.5,
+          "y": 429,
+          "width": 58,
+          "height": 14,
+          "lx": 407.5,
+          "ly": 439
+        },
+        "from": [
+          424,
+          661
+        ],
+        "to": [
+          424,
+          384
+        ]
+      },
+      "supportedFixes": [
+        "if the authored fromSide/toSide are not required by the user, remove them so the renderer can re-plan; otherwise preserve that intent and adjust labelAt, labelDx, labelDy, or labelSegment; otherwise adjust the other relationship route/via/channel"
+      ]
+    }
+  ],
+  "evidence": {
+    "receipt": "/home/xore/Desktop/benchmark-grader/.archify/architecture-benchmark-grader-20261004-032605/benchmark-grader.finalize.json",
+    "summaryReceipt": "/home/xore/Desktop/benchmark-grader/.archify/architecture-benchmark-grader-20261004-032605/benchmark-grader.finalize-summary.json"
+  },
+  "visualReview": "not-requested",
+  "failedStage": "validate",
+  "finishedAt": "2026-10-04T01:26:47.936Z",
+  "durationMs": 686
+}

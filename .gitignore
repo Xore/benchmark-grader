@@ -2,6 +2,10 @@ node_modules/
 dist/
 build/
 
+# agent-harness skill installs (vendored, large, and per-machine)
+.hermes/
+.astryx/
+
 .env
 .env.*
 !.env.example

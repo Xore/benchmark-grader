@@ -1,0 +1,116 @@
+{
+  ".impeccable/config.json": {
+    "mtime": 1791077017.613758,
+    "seen": 1791077161.7551937,
+    "ast_hash": "8b8bb898581f3da73516b6f885f3d0c6",
+    "semantic_hash": "8b8bb898581f3da73516b6f885f3d0c6"
+  },
+  "package.json": {
+    "mtime": 1791076847.746059,
+    "seen": 1791077161.7552013,
+    "ast_hash": "5519c5e3ab6ee1298be52f2f97e81cca",
+    "semantic_hash": "5519c5e3ab6ee1298be52f2f97e81cca"
+  },
+  "server.ts": {
+    "mtime": 1791075965.4179795,
+    "seen": 1791077161.7552047,
+    "ast_hash": "1fd2f32199b4e0d696086a94907136ae",
+    "semantic_hash": "1fd2f32199b4e0d696086a94907136ae"
+  },
+  "src/answer-chunks.ts": {
+    "mtime": 1791075536.8759766,
+    "seen": 1791077161.7552066,
+    "ast_hash": "94105679b0551a25785a67458cef973c",
+    "semantic_hash": "94105679b0551a25785a67458cef973c"
+  },
+  "src/app.tsx": {
+    "mtime": 1791075688.024855,
+    "seen": 1791077161.7552087,
+    "ast_hash": "27ba1420bb49aa778ee94276dfb59580",
+    "semantic_hash": "27ba1420bb49aa778ee94276dfb59580"
+  },
+  "src/shiki-tokenizer.ts": {
+    "mtime": 1791075828.6361,
+    "seen": 1791077161.7552102,
+    "ast_hash": "d6927f5af86127349186c8df22381e0c",
+    "semantic_hash": "d6927f5af86127349186c8df22381e0c"
+  },
+  "src/themes/neutral/icons.tsx": {
+    "mtime": 1791076834.030918,
+    "seen": 1791077161.7552123,
+    "ast_hash": "1245eb6648d18307ded103a0d9c36eea",
+    "semantic_hash": "1245eb6648d18307ded103a0d9c36eea"
+  },
+  "src/themes/neutral/neutralPaletteRefs.generated.ts": {
+    "mtime": 1791076834.0312219,
+    "seen": 1791077161.7552137,
+    "ast_hash": "fb132590ce0ed703c63adee167b05375",
+    "semantic_hash": "fb132590ce0ed703c63adee167b05375"
+  },
+  "src/themes/neutral/neutralPalettes.generated.receipt.json": {
+    "mtime": 1791076834.031293,
+    "seen": 1791077161.7552156,
+    "ast_hash": "4fab8ad70bfa20260547f8fc81ec13af",
+    "semantic_hash": "4fab8ad70bfa20260547f8fc81ec13af"
+  },
+  "src/themes/neutral/neutralPalettes.generated.ts": {
+    "mtime": 1791076834.0311341,
+    "seen": 1791077161.7552176,
+    "ast_hash": "dc0f09988043189ad28c6de7ce424da2",
+    "semantic_hash": "dc0f09988043189ad28c6de7ce424da2"
+  },
+  "src/themes/neutral/neutralPalettes.ts": {
+    "mtime": 1791076834.0310287,
+    "seen": 1791077161.7552192,
+    "ast_hash": "6a82f50c97acacf8999fc407b79ca3ab",
+    "semantic_hash": "6a82f50c97acacf8999fc407b79ca3ab"
+  },
+  "src/themes/neutral/neutralTheme.ts": {
+    "mtime": 1791076834.0296237,
+    "seen": 1791077161.7552218,
+    "ast_hash": "cc80b79a75fd2f5f3195c3c16f126273",
+    "semantic_hash": "cc80b79a75fd2f5f3195c3c16f126273"
+  },
+  "src/themes/neutral/palette.config.json": {
+    "mtime": 1791076834.031367,
+    "seen": 1791077161.7552235,
+    "ast_hash": "8cef29188a7b35b91eb3277295c8fb6c",
+    "semantic_hash": "8cef29188a7b35b91eb3277295c8fb6c"
+  },
+  "tmpl/ai-chat.tsx": {
+    "mtime": 1791073294.517342,
+    "seen": 1791077161.7552252,
+    "ast_hash": "cc555bd871d0955a52dd6713abf79295",
+    "semantic_hash": "cc555bd871d0955a52dd6713abf79295"
+  },
+  "tmpl/file-explorer.tsx": {
+    "mtime": 1791073295.157342,
+    "seen": 1791077161.7552266,
+    "ast_hash": "6b48fc2816dc800fd4a20d8cc5bf9968",
+    "semantic_hash": "6b48fc2816dc800fd4a20d8cc5bf9968"
+  },
+  "tmpl/ide.tsx": {
+    "mtime": 1791073295.7953417,
+    "seen": 1791077161.755228,
+    "ast_hash": "a1d6534e45859158eeef60e887f275ca",
+    "semantic_hash": "a1d6534e45859158eeef60e887f275ca"
+  },
+  "tmpl/shell-nav.tsx": {
+    "mtime": 1791073293.889342,
+    "seen": 1791077161.7552297,
+    "ast_hash": "55f8e8f623c8725fc16efeeb3eb6b413",
+    "semantic_hash": "55f8e8f623c8725fc16efeeb3eb6b413"
+  },
+  "tsconfig.json": {
+    "mtime": 1791072305.3892937,
+    "seen": 1791077161.7552314,
+    "ast_hash": "67c401b5f4ca9189f6d12b4f31818e4a",
+    "semantic_hash": "67c401b5f4ca9189f6d12b4f31818e4a"
+  },
+  "verify.ts": {
+    "mtime": 1791074332.7697217,
+    "seen": 1791077161.7552333,
+    "ast_hash": "0ea104c6ed96a901301550e8a64f994d",
+    "semantic_hash": "0ea104c6ed96a901301550e8a64f994d"
+  }
+}

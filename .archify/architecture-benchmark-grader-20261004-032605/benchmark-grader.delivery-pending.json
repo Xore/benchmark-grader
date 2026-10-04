@@ -1,0 +1,8 @@
+{
+  "schemaVersion": 1,
+  "command": "deliver",
+  "status": "pending",
+  "receiptId": "677799a2-f781-494b-a2f2-9d6ae62195d8",
+  "input": "/home/xore/Desktop/benchmark-grader/.archify/architecture-benchmark-grader-20261004-032605/candidate.json",
+  "output": "/home/xore/Desktop/benchmark-grader/.archify/architecture-benchmark-grader-20261004-032605/benchmark-grader.html"
+}
