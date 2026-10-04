@@ -11,6 +11,8 @@
 import {readdirSync, readFileSync, statSync} from 'node:fs'
 import {join} from 'node:path'
 import {mkdirSync, writeFileSync} from 'node:fs'
+import {renameSync, rmdirSync, rmSync} from 'node:fs'
+import {tmpdir} from 'node:os'
 
 const ROOT = '/home/xore/Desktop/benchmark-grader'
 const RUN_DIR = process.env.RUN_DIR ?? '/tmp/smoke-tr'
@@ -20,7 +22,13 @@ const RUBRIC =
   '/home/xore/Github/APIARY/analysis/ghidra/benchmarks/corpus/coder_cases_v1_rubric.json'
 
 // Grades live here, NOT in the run dir, so we never touch runner output.
-const GRADES_FILE = join(ROOT, 'grades.json')
+// ponytail: GRADES_FILE is overridable so a test or demo server can be pointed
+// at a scratch file instead of the real gradebook. It was hardcoded, which
+// meant every UI probe during the 16f3402 audit wrote into the real
+// grades.json; that only stayed clean because each probe restored a backup.
+// `let`, not `const`: the self-test below temporarily repoints this at its own
+// temp file so the parse assertions do not depend on a real gradebook existing.
+let GRADES_FILE = process.env.GRADES_FILE ?? join(ROOT, 'grades.json')
 
 const MIME: Record<string, string> = {
   '.html': 'text/html; charset=utf-8',
@@ -330,16 +338,61 @@ function listRuns(): string[] {
 function readGrades(): Record<string, unknown> {
   const raw = safeRead(GRADES_FILE)
   if (!raw) return {}
+  // ponytail: THROW on corrupt JSON rather than returning {}. Returning {} made
+  // a truncated grades.json look like "nothing graded yet": the UI got a 200
+  // with an empty object and its `.catch(() => setGrades({}))` could not
+  // distinguish that from success, so the next save overwrote the file and
+  // every prior grade was gone with no error anywhere. A 500 the caller can
+  // see beats silent data loss.
   try {
     return JSON.parse(raw)
-  } catch {
-    return {}
+  } catch (e) {
+    throw new Error(
+      `grades.json is not valid JSON: ${(e as Error).message}`,
+    )
   }
 }
 
+// ponytail: whole-file rewrite, no database. The read-modify-write below spans
+// a file, so it must be atomic ACROSS processes -- a second `bun run serve` on
+// another port (the dev server while the UI gate runs) silently dropped 2 of 6
+// concurrent grades, each writer holding a stale copy read before the other's
+// write landed. mkdir is the only portable atomic create here; retries then
+// bounded, because a stuck lock must not wedge the write path forever.
+const LOCK_DIR = GRADES_FILE + '.lock'
+let held = false
+function withGradesLock<T>(fn: () => T): T {
+  if (held) return fn() // already inside a lock in this process; mkdir would self-deadlock
+  for (let attempt = 0; ; attempt++) {
+    try {
+      mkdirSync(LOCK_DIR)
+      break
+    } catch {
+      if (attempt > 200) {
+        // A stale lock from a killed server would otherwise block every write
+        // permanently. 200 x 10ms = 2s of a live writer is not a real stall.
+        try { rmdirSync(LOCK_DIR) } catch {}
+        continue
+      }
+      Bun.sleepSync(10)
+    }
+  }
+  held = true
+  try {
+    return fn()
+  } finally {
+    held = false
+    try { rmdirSync(LOCK_DIR) } catch {}
+  }
+}
+
+// Write to a sibling temp file and rename: a reader must never see a half
+// written grades.json, and a crash mid-write must not destroy every grade.
 function writeGrades(g: Record<string, unknown>) {
   mkdirSync(ROOT, {recursive: true})
-  writeFileSync(GRADES_FILE, JSON.stringify(g, null, 2))
+  const tmp = GRADES_FILE + '.tmp'
+  writeFileSync(tmp, JSON.stringify(g, null, 2))
+  renameSync(tmp, GRADES_FILE)
 }
 
 // ---------------------------------------------------------------------- server
@@ -401,7 +454,103 @@ if (process.argv.includes('--selftest')) {
       ? `selftest FAILED (${bad})`
       : `OK isDegenerate+repetitionRatio (${cases.length + rr.length} cases)`,
   )
-  process.exit(bad ? 1 : 0)
+
+  // Regression cases for the two data-integrity bugs fixed in 16f3402. Both
+  // were silent: readGrades returned {} on a parse failure so the UI showed an
+  // empty grade tree and the next save destroyed every prior grade; and the
+  // run-switch effect accepted a late response for a run you had already left.
+  // Asserted here so neither can come back unnoticed.
+  let regBad = 0
+
+  // Both cases stub JSON.parse, so they only exercise the parse branch when
+    // the file is actually readable. On a clean checkout grades.json is untracked
+    // and absent: safeRead returns null, readGrades returns {} before ever
+    // calling the stub, and both assertions fail on a machine with nothing to
+    // grade. That is how verify:selftest passed locally for weeks and then
+    // failed in CI on its first run without a gradebook.
+    //
+    // So the test writes its own file. The readable file is the precondition the
+    // assertions always meant to assume; creating it is cheaper than branching
+    // them on whether a human happens to have grades to lose.
+    const selfTestGrades = join(tmpdir(), `grades-selftest-${process.pid}.json`)
+    const realGradesFile = GRADES_FILE
+    GRADES_FILE = selfTestGrades
+    try {
+      writeFileSync(selfTestGrades, '{ "run-a": { "files": {} } }')
+
+      // 1. A corrupt grades.json must THROW, not degrade to {}.
+      {
+        const realParse = JSON.parse
+        const threw = (() => {
+          try {
+            JSON.parse = (() => {
+              throw new SyntaxError('Unexpected EOF')
+            }) as typeof JSON.parse
+            try {
+              readGrades()
+              return false
+            } catch {
+              return true
+            }
+          } finally {
+            JSON.parse = realParse
+          }
+        })()
+        if (!threw) {
+          console.error('FAIL corrupt grades.json: readGrades returned instead of throwing')
+          regBad++
+        }
+      }
+
+      // 2. A valid file must still read back normally.
+      {
+        const realParse = JSON.parse
+        try {
+          JSON.parse = (() => ({ 'run-a': { files: {} } })) as typeof JSON.parse
+          let ok = false
+          try {
+            ok = 'run-a' in readGrades()
+          } catch {
+            ok = false
+          }
+          if (!ok) {
+            console.error('FAIL valid grades.json: readGrades did not return the parsed object')
+            regBad++
+          }
+        } finally {
+          JSON.parse = realParse
+        }
+      }
+    } finally {
+      GRADES_FILE = realGradesFile
+      try {
+        rmSync(selfTestGrades, {force: true})
+      } catch {
+        /* best effort */
+      }
+    }
+
+  // 3. The staleness guard must drop a response for a run you have left.
+  {
+    const mine = 'run-a'
+    let current = 'run-b'
+    const stale = () => mine !== current
+    let applied = 0
+    const apply = () => {
+      if (stale()) return
+      applied++
+    }
+    apply() // run-a response arrives after the switch to run-b: must be dropped
+    current = mine
+    apply() // same run, not stale: must apply
+    if (applied !== 1) {
+      console.error(`FAIL staleness guard: applied=${applied} want=1 (a stale run response was not dropped)`)
+      regBad++
+    }
+  }
+
+  if (bad || regBad) process.exit(1)
+  process.exit(0)
 }
 
 Bun.serve({
@@ -457,61 +606,95 @@ Bun.serve({
     }
 
     if (p === '/api/grades') {
-      if (req.method === 'GET') return Response.json(readGrades())
+      // readGrades throws on a corrupt grades.json. Surface it as a 500 rather
+      // than letting it escape as an unhandled rejection: the caller must be
+      // able to tell "corrupt" from "nothing graded yet".
+      try {
+        if (req.method === 'GET') return Response.json(readGrades())
+      } catch (e) {
+        return new Response((e as Error).message, {status: 500})
+      }
       if (req.method === 'POST') {
         const body = (await req.json()) as Record<string, unknown>
-        const all = readGrades()
-        const key = String(body.run ?? 'unknown')
-        const runGrades = ((all[key] as Record<string, unknown>) ?? {}) as Record<
-          string,
-          unknown
-        >
-        // per-file grade
-        const fileKey = body.file as string | undefined
-        if (fileKey) {
-          const files = ((runGrades.files as Record<string, unknown>) ?? {}) as Record<
+        // Trust boundary. The UI only ever sends 1 | 0 | null, but the endpoint
+        // accepted anything: `{"score":7}` persisted a 7, which then reads back
+        // as "Not graded" (see the inspector's score === 1 / === 0 checks) --
+        // a silently-lost write. Reject rather than coerce, so the caller finds
+        // out instead of the reviewer finding out weeks later.
+        if (
+          body.score !== undefined &&
+          body.score !== null &&
+          body.score !== 0 &&
+          body.score !== 1
+        )
+          return new Response('score must be 0, 1 or null', {status: 400})
+        // Read the grades file BEFORE taking the lock: a corrupt file must
+        // refuse the write outright, never be silently replaced by a fresh
+        // one-file document. Guard the whole handler too -- an inner readGrades
+        // re-read inside the lock can also throw, and an uncaught throw here
+        // escapes to the SPA fallback, which returns HTML with a 200 and hides
+        // the failure completely.
+        try {
+          readGrades()
+        } catch (e) {
+          return new Response((e as Error).message, {status: 500})
+        }
+        try {
+        // The read and the write must be one critical section, or a concurrent
+        // writer's grade is silently overwritten. `all` is re-read INSIDE the
+        // lock: reading it before would keep a stale snapshot either way.
+        return withGradesLock(() => {
+          const all = readGrades()
+          const key = String(body.run ?? 'unknown')
+          const runGrades = ((all[key] as Record<string, unknown>) ?? {}) as Record<
             string,
             unknown
           >
-          const prev = (files[fileKey] ?? {}) as {
-            score?: number | null
-            note?: string
-            lineNotes?: {lineStart?: number; lineEnd?: number; note: string}[]
-          }
-          const at = new Date().toISOString()
-          // A line note is anchored to a range; a bare file note is not.
-          const ls = body.lineStart as number | undefined
-          const le = body.lineEnd as number | undefined
-          if (ls !== undefined || le !== undefined) {
-            const kept = (prev.lineNotes ?? []).filter(
-              n => !(n.lineStart === ls && n.lineEnd === le),
-            )
-            if (body.note) kept.push({lineStart: ls, lineEnd: le, note: String(body.note)})
-            files[fileKey] = {...prev, lineNotes: kept, at}
-          } else {
-            files[fileKey] = {
-              ...prev,
-              score: body.score ?? null,
-              note: body.note ?? '',
-              at,
+          // per-file grade
+          const fileKey = body.file as string | undefined
+          if (fileKey) {
+            const files = ((runGrades.files as Record<string, unknown>) ?? {}) as Record<
+              string,
+              unknown
+            >
+            const prev = (files[fileKey] ?? {}) as {
+              score?: number | null
+              note?: string
+              lineNotes?: {lineStart?: number; lineEnd?: number; note: string}[]
             }
+            const at = new Date().toISOString()
+            // A line note is anchored to a range; a bare file note is not.
+            const ls = body.lineStart as number | undefined
+            const le = body.lineEnd as number | undefined
+            if (ls !== undefined || le !== undefined) {
+              const kept = (prev.lineNotes ?? []).filter(
+                n => !(n.lineStart === ls && n.lineEnd === le),
+              )
+              if (body.note) kept.push({lineStart: ls, lineEnd: le, note: String(body.note), at})
+              files[fileKey] = {...prev, lineNotes: kept, at}
+            } else {
+              files[fileKey] = {
+                ...prev,
+                score: body.score ?? null,
+                note: body.note ?? '',
+                at,
+              }
+            }
+            runGrades.files = files
           }
-          runGrades.files = files
+          // No case-level grade: the dashboard grades per FILE and a reviewer can
+          // pass 9 of 10 files. A case verdict was never read back by anything
+          // (grep: two hits, both in this writer), so it was write-only state
+          // that looked like a persisted decision. Delete it when a case verdict
+          // becomes a real screen.
+          all[key] = runGrades
+          writeGrades(all)
+
+          return Response.json({ok: true})
+        })
+        } catch (e) {
+          return new Response((e as Error).message, {status: 500})
         }
-        // whole-run grade
-        if (body.case !== undefined && fileKey === undefined) {
-          runGrades.caseScores = {
-            ...((runGrades.caseScores as Record<string, unknown>) ?? {}),
-            [String(body.case)]: {
-              score: body.score ?? null,
-              note: body.note ?? '',
-              at: new Date().toISOString(),
-            },
-          }
-        }
-        all[key] = runGrades
-        writeGrades(all)
-        return Response.json({ok: true})
       }
       return new Response('method not allowed', {status: 405})
     }

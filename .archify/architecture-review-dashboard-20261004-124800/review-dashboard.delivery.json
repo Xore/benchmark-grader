@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "receiptId": "c611a06a-68f6-4933-bde7-b6f703c4433d",
+  "status": "current",
+  "command": "deliver",
+  "type": "architecture",
+  "input": "/home/xore/Desktop/benchmark-grader/.archify/architecture-review-dashboard-20261004-124800/candidate.json",
+  "output": "/home/xore/Desktop/benchmark-grader/.archify/architecture-review-dashboard-20261004-124800/review-dashboard.html",
+  "specification": {
+    "sha256": "814eefbd65f82ed331bcf648f7d99c4610dabf90a97e51490e3bc9d2f08828cd",
+    "bytes": 7300
+  },
+  "artifact": {
+    "sha256": "b7640d9c27e6a044a2d4405bccb9205397e993e667364eed1c98c15c0e30f46c",
+    "bytes": 774949
+  }
+}

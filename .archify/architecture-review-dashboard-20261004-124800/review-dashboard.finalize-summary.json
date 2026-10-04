@@ -1,0 +1,190 @@
+{
+  "schemaVersion": 1,
+  "ok": true,
+  "command": "finalize",
+  "status": "pass",
+  "type": "architecture",
+  "quality": "showcase",
+  "specification": {
+    "path": "/home/xore/Desktop/benchmark-grader/.archify/architecture-review-dashboard-20261004-124800/candidate.json",
+    "sha256": "814eefbd65f82ed331bcf648f7d99c4610dabf90a97e51490e3bc9d2f08828cd",
+    "bytes": 7300
+  },
+  "artifact": {
+    "path": "/home/xore/Desktop/benchmark-grader/.archify/architecture-review-dashboard-20261004-124800/review-dashboard.html",
+    "sha256": "b7640d9c27e6a044a2d4405bccb9205397e993e667364eed1c98c15c0e30f46c",
+    "bytes": 774949
+  },
+  "gates": {
+    "validate": "pass",
+    "deliver": "pass",
+    "check": "pass",
+    "browser-check": "pass"
+  },
+  "diagnostics": [],
+  "diagnosticSummary": {
+    "total": 0,
+    "shown": 0,
+    "truncated": false
+  },
+  "evidence": {
+    "receipt": "/home/xore/Desktop/benchmark-grader/.archify/architecture-review-dashboard-20261004-124800/review-dashboard.finalize.json",
+    "summaryReceipt": "/home/xore/Desktop/benchmark-grader/.archify/architecture-review-dashboard-20261004-124800/review-dashboard.finalize-summary.json",
+    "browserCheckReceipt": "/home/xore/Desktop/benchmark-grader/.archify/architecture-review-dashboard-20261004-124800/review-dashboard.browser-check.json"
+  },
+  "visualReview": "not-requested",
+  "durationMs": 3414,
+  "visualReviewRecommendation": {
+    "action": "inspect-route-readability",
+    "signals": {
+      "resolvedCrossovers": 4,
+      "routesOverSuggestedBends": 3,
+      "routesOverSuggestedStretch": 1
+    },
+    "reason": "Automated gates passed, but crossings or detours still need perceptual review before claiming visual quality.",
+    "affectedRoutes": {
+      "crossings": [
+        {
+          "left": {
+            "id": "br-srv",
+            "from": "browser",
+            "to": "srv",
+            "label": "GET /api/*",
+            "collectionIndex": 1,
+            "artifactIndex": 2
+          },
+          "right": {
+            "id": "srv-gr",
+            "from": "srv",
+            "to": "grades",
+            "label": "POST /api/grades",
+            "collectionIndex": 12,
+            "artifactIndex": 13
+          },
+          "point": [
+            484,
+            295
+          ],
+          "sharedNode": "srv"
+        },
+        {
+          "left": {
+            "id": "br-bundle",
+            "from": "browser",
+            "to": "bundle",
+            "label": "load bundle",
+            "collectionIndex": 2,
+            "artifactIndex": 3
+          },
+          "right": {
+            "id": "srv-gr",
+            "from": "srv",
+            "to": "grades",
+            "label": "POST /api/grades",
+            "collectionIndex": 12,
+            "artifactIndex": 13
+          },
+          "point": [
+            484,
+            440
+          ]
+        },
+        {
+          "left": {
+            "id": "srv-rt",
+            "from": "srv",
+            "to": "runtree",
+            "label": "read",
+            "collectionIndex": 4,
+            "artifactIndex": 5
+          },
+          "right": {
+            "id": "srv-ru",
+            "from": "srv",
+            "to": "rubsvc",
+            "label": "",
+            "collectionIndex": 5,
+            "artifactIndex": 6
+          },
+          "point": [
+            694,
+            246
+          ],
+          "sharedNode": "srv"
+        },
+        {
+          "left": {
+            "id": "ru-rubfile",
+            "from": "rubsvc",
+            "to": "rubfile",
+            "label": "cache",
+            "collectionIndex": 9,
+            "artifactIndex": 10
+          },
+          "right": {
+            "id": "ar-rundir",
+            "from": "artsvc",
+            "to": "rundir",
+            "label": "read index.jsonl",
+            "collectionIndex": 11,
+            "artifactIndex": 12
+          },
+          "point": [
+            1026,
+            293
+          ]
+        }
+      ],
+      "detours": [
+        {
+          "relationship": {
+            "id": "srv-ru",
+            "from": "srv",
+            "to": "rubsvc",
+            "label": "",
+            "collectionIndex": 5,
+            "artifactIndex": 6
+          },
+          "bends": 3,
+          "stretch": 1.215
+        },
+        {
+          "relationship": {
+            "id": "ar-rundir",
+            "from": "artsvc",
+            "to": "rundir",
+            "label": "read index.jsonl",
+            "collectionIndex": 11,
+            "artifactIndex": 12
+          },
+          "bends": 3,
+          "stretch": 1
+        },
+        {
+          "relationship": {
+            "id": "srv-gr",
+            "from": "srv",
+            "to": "grades",
+            "label": "POST /api/grades",
+            "collectionIndex": 12,
+            "artifactIndex": 13
+          },
+          "bends": 4,
+          "stretch": 1.666
+        }
+      ],
+      "truncated": false
+    },
+    "hints": [
+      "srv has 4 relationships facing its right side, which fits 3 ports: make that side at least 74px, or move some of those neighbours so they face another side of srv.",
+      "browser → srv and srv → grades cross next to srv: move node browser or grades so the two reach srv from different sides (for example one level with it, one directly above or below it).",
+      "browser → bundle crosses srv → grades: move the node of whichever is a branch, return, or second entrance to the other side of the main path, so that relationship runs through an empty corridor.",
+      "srv → runtree and srv → rubsvc cross next to srv: move node runtree or rubsvc so the two reach srv from different sides (for example one level with it, one directly above or below it).",
+      "rubsvc → rubfile crosses artsvc → rundir: move the node of whichever is a branch, return, or second entrance to the other side of the main path, so that relationship runs through an empty corridor.",
+      "srv → rubsvc needs 3 bends: move node srv or rubsvc so they share a row or column with matching centers, or sit diagonally with a clear corner.",
+      "artsvc → rundir needs 3 bends: move node artsvc or rundir so they share a row or column with matching centers, or sit diagonally with a clear corner.",
+      "srv → grades needs 4 bends: move node srv or grades so they share a row or column with matching centers, or sit diagonally with a clear corner."
+    ],
+    "repair": "Trace these relationships at the desktop viewport. For Architecture, use references/architecture-layout-repair.md: reflow a blocked main path or tangled connected scene, and repair an isolated defect locally only when the surrounding composition is accepted. Preserve all semantic content and user-fixed geometry. Rerun finalize once after the edit."
+  }
+}

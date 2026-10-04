@@ -2,7 +2,7 @@
 
 'use client';
 
-import {useState, useMemo, useEffect, type CSSProperties} from 'react';
+import {useState, useMemo, useEffect, Fragment, type CSSProperties} from 'react';
 
 import {Layout, LayoutContent, LayoutPanel} from '@astryxdesign/core/Layout';
 import {ResizeHandle, useResizable} from '@astryxdesign/core/Resizable';
@@ -33,7 +33,6 @@ import {TextArea} from '@astryxdesign/core/TextArea';
 import {Selector} from '@astryxdesign/core/Selector';
 import {Timestamp} from '@astryxdesign/core/Timestamp';
 import {Collapsible} from '@astryxdesign/core/Collapsible';
-import {ProgressBar} from '@astryxdesign/core/ProgressBar';
 import {tokenize} from './shiki-tokenizer';
 import {chunkAnswer} from './answer-chunks';
 import {
@@ -91,44 +90,6 @@ const styles: Record<string, CSSProperties> = {
   },
 };
 
-const EDITOR_CODE = `import {useState, useCallback} from 'react';
-import {Button} from '@astryxdesign/core/Button';
-import {Text} from '@astryxdesign/core/Text';
-
-const containerStyle = {
-  display: 'flex',
-  flexDirection: 'column',
-  gap: 8,
-  padding: 16,
-};
-const counterStyle = {
-  fontSize: 48,
-  fontWeight: 700,
-  fontVariantNumeric: 'tabular-nums',
-};
-
-export default function Counter() {
-  const [count, setCount] = useState(0);
-
-  const increment = useCallback(() => {
-    setCount(prev => prev + 1);
-  }, []);
-
-  const reset = useCallback(() => {
-    setCount(0);
-  }, []);
-
-  return (
-    <div style={containerStyle}>
-      <Text type="label">Counter</Text>
-      <span style={counterStyle}>
-        {count}
-      </span>
-      <Button label="Increment" onClick={increment} />
-      <Button label="Reset" variant="secondary" onClick={reset} />
-    </div>
-  );
-}`;
 
 
 function buildFileTree(
@@ -150,18 +111,28 @@ function buildFileTree(
     // case belongs to.
     endContent: c.rubric?.bucket ? <Token label={c.rubric.bucket} size="sm" /> : undefined,
     isExpanded: true,
-    children: c.artifacts.map(a => {
+    children: (() => {
+      // description only where the basename is ambiguous. Same basename in two
+      // dirs does happen (tool-written/parse_record.c vs tool-written/src/),
+      // and then the path is the only thing telling them apart. Everywhere else
+      // it is pure noise that hard-clipped 18-61px at narrow widths.
+      const names = c.artifacts.map(a => a.path.split('/').pop() ?? a.path);
+      const dupe = (n: string) => names.filter(x => x === n).length > 1;
+      return c.artifacts.map((a, i) => {
       const score = grades[`${c.id}:${a.path}`]?.score;
-      const name = a.path.split('/').pop() ?? a.path;
+      const name = names[i]!;
       return {
         id: `${c.id}:${a.path}`,
-        // Full path, not the basename. maxLines={1} truncates the tail, which
-        // is the informative end (the directory), and the panel has no room for
-        // it -- so two files with the same basename in one case were
-        // indistinguishable rows. TreeListItemData has no tooltip prop, so the
-        // path itself is the label; the CodeBlock title and the Properties
-        // panel both still show the short name.
-        label: label(a.path),
+        // Basename label; `description` carries the full path only when the
+        // basename repeats (see below). The label used to be the whole path,
+        // which clipped every row at EVERY width; the paths remain visible in
+        // the panel built to hold them.
+        // Same basename twice in one case happens (tool-written/parse_record.c
+        // vs tool-written/src/). The parent dir is the only thing that tells
+        // them apart, so it goes in the label -- which ellipsises by design.
+        // It does NOT go in `description`: TreeListItem renders that in a
+        // fixed-width span with no style hook, so a path there hard-clips.
+        label: label(dupe(name) ? `${a.path.split('/').slice(-2, -1)[0]}/${name}` : name),
         startContent: <Icon icon={DocumentTextIcon} size="xsm" />,
         // Three distinct states, never two: pass, fail, and not-yet-judged are
         // different decisions and must not collapse into one glyph.
@@ -198,7 +169,8 @@ function buildFileTree(
         isSelected: selectedId === `${c.id}:${a.path}`,
         onClick: () => onFileClick(c, a),
       };
-    }),
+      });
+    })(),
   }));
 }
 
@@ -277,6 +249,10 @@ export default function ResizableWorkspacePage() {
   // and the button can never send you somewhere the tree does not show.
   // ponytail: linear scan on every render -- n is one run's artifacts (<= a few
   // hundred); a per-case memo buys nothing until it measurably hurts.
+  const navFiles = useMemo(
+    () => visibleCases.flatMap(c => c.artifacts.map(a => ({ c, a }))),
+    [visibleCases],
+  );
   const nextUngraded = useMemo(() => {
     const flat = visibleCases.flatMap(c =>
       c.artifacts.map(a => ({c, a})),
@@ -356,19 +332,34 @@ export default function ResizableWorkspacePage() {
     if (!runId) return;
     setPicked(null);
     setFileFilter('');
+    // ponytail: capture the id and drop late responses instead of an
+    // AbortController -- same guarantee, no teardown plumbing. Without this, a
+    // slow response for the run you just LEFT overwrites the current one, and
+    // since `grade()` keys writes on `runId`, its verdicts land in the wrong
+    // runbook permanently.
+    const mine = runId;
+    const stale = () => mine !== runId;
     loadRun(runId)
       .then(r => {
+        if (stale()) return;
         setRun(r);
         setCases(r.cases);
         setCaseId(r.cases[0]?.id ?? '');
       })
       .catch(() => {
+        if (stale()) return;
         setRun(null);
         setCases([]);
       });
     loadGrades()
-      .then(g => setGrades((g[runId]?.files ?? {}) as Record<string, Grade>))
-      .catch(() => setGrades({}));
+      .then(g => {
+        if (stale()) return;
+        setGrades((g[runId]?.files ?? {}) as Record<string, Grade>);
+      })
+      .catch(() => {
+        if (stale()) return;
+        setGrades({});
+      });
   }, [runId]);
 
   // P1-2: selecting a case should show what you are grading against.
@@ -398,6 +389,12 @@ export default function ResizableWorkspacePage() {
     setPicked(null);
     setLineStart(null);
     setLineEnd(null);
+    // ponytail: clear the note HERE, not at each call site. The note is
+    // persisted by `grade(..., withNote = note)`, so a note left over from the
+    // previous file was silently saved onto the next file's grade. Every path
+    // that moves the selection routes through this effect, so one reset here
+    // covers the case selector, "Next ungraded" and J/K navigation alike.
+    setNote('');
   }, [caseId, picked?.c.id]);
 
   // ponytail: the note is passed in, not read from state. Reading `note` here
@@ -426,6 +423,47 @@ export default function ResizableWorkspacePage() {
       .catch(e =>
         say(`NOT SAVED: ${a.path} — ${e?.message ?? 'write failed'}`),
       );
+
+  // ponytail: one window-level keydown instead of per-component handlers --
+  // shortcuts belong to the app, not to whichever pane happens to be mounted.
+  // Skipped a keymap registry; add when a binding needs remapping.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      // Never steal keys from a field the reviewer is typing in.
+      const t = e.target as HTMLElement | null;
+      if (t && (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName)))
+        return;
+      if (e.metaKey || e.ctrlKey || e.altKey) return;
+      const k = e.key.toLowerCase();
+      if (k === 'p' && picked) { e.preventDefault(); grade(picked.c, picked.a, 1); }
+      else if (k === 'f' && picked) { e.preventDefault(); grade(picked.c, picked.a, 0); }
+      else if (k === 'c' && picked) { e.preventDefault(); grade(picked.c, picked.a, null); }
+      else if ((k === 'j' || k === 'k') && navFiles.length) {
+        e.preventDefault();
+        const i = navFiles.findIndex(x => x.a.path === picked?.a.path);
+        // j = next, k = previous; wrap at both ends so the tree is a loop.
+        const n = (i < 0 ? -1 : i) + (k === 'j' ? 1 : -1);
+        const next = navFiles[((n % navFiles.length) + navFiles.length) % navFiles.length];
+        setPicked({ c: next.c, a: next.a });
+        setCaseId(next.c.id);
+        setNote(grades[`${next.c.id}:${next.a.path}`]?.note ?? '');
+        // Land on the SOURCE pane, not whatever tab was showing. Moving
+        // selection without moving the view means you grade the new file
+        // against the previous file's transcript -- the two panes disagree,
+        // which is the exact failure this tool cannot afford. The
+        // "Next ungraded" button already does this; j/k must match it.
+        setViewTab('source');
+      } else if (e.key === 'Enter' && nextUngraded) {
+        e.preventDefault();
+        setPicked({ c: nextUngraded.c, a: nextUngraded.a });
+        setCaseId(nextUngraded.c.id);
+        setNote(grades[`${nextUngraded.c.id}:${nextUngraded.a.path}`]?.note ?? '');
+        setViewTab('source');
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [picked, navFiles, grades, nextUngraded, note]);
 
   /** Note anchored to a line range; falls back to the whole-file note. */
   const rangeNote = (c: Case, a: Artifact) => {
@@ -507,10 +545,6 @@ export default function ResizableWorkspacePage() {
 
   const curCase = cases.find(c => c.id === caseId);
   const totalFiles = cases.reduce((n, c) => n + c.artifacts.length, 0);
-  const gradedFiles = cases.reduce(
-    (n, c) => n + c.artifacts.filter(a => grades[`${c.id}:${a.path}`]?.score != null).length,
-    0,
-  );
 
   // real per-file facts for the inspector, replacing demo PROPERTIES
   const PROPERTIES = picked
@@ -589,7 +623,21 @@ export default function ResizableWorkspacePage() {
     collapsedSize: 50,
   });
 
-  const isMobile = useMediaQuery('(max-width: 768px)');
+  // The file tree drops out below 900px, not 768: between those two widths the
+// 256px tree plus the 320px properties panel left the content column ~200px,
+// which is unusable for reading a transcript or a source file. The panel
+// widths below are share-of-viewport for the same reason.
+  const isMobile = useMediaQuery('(max-width: 900px)');
+
+  // Below 900px the tree and the properties panel cannot both keep their
+  // desktop pixel widths, so the TREE gives up its width first: it renders
+  // collapsed to its 50px handle and the reviewer reopens it from there.
+  // It is NOT unmounted -- that left no way to pick a file at all on a
+  // phone, since the case selector in the top nav chooses a case, not a file.
+  useEffect(() => {
+    if (isMobile) startPanel.collapse();
+    else startPanel.expand();
+  }, [isMobile]);
 
   return (
     <AppShell
@@ -614,13 +662,19 @@ export default function ResizableWorkspacePage() {
         <TopNav
           label="Benchmark grader"
           startContent={
-            <HStack gap={3}>
-              <Text>Benchmark Grader</Text>
-              <Selector
-                label="Select model"
-                size="sm"
-                width={180}
-                value={modelTag}
+            <HStack gap={3} wrap={isMobile ? 'wrap' : 'nowrap'} width="100%">
+            {/* level={1} renders a real <h1>. The <Text> that was here
+                rendered a <span>, so the app shipped zero top-level headings
+                and a screen reader had no document title to jump to.
+                TopNavHeading looks like the obvious choice but does not emit a
+                heading element — verified in TopNavHeading.js, it renders
+                spans and divs only. */}
+            <Heading level={1}>Benchmark Grader</Heading>
+            <Selector
+              label="Select model"
+              size="sm"
+              width={isMobile ? '100%' : 180}
+              value={modelTag}
                 placeholder="All models"
                 options={[
                   {value: '', label: 'All models'},
@@ -631,7 +685,7 @@ export default function ResizableWorkspacePage() {
               <Selector
                 label="Select run"
                 size="sm"
-                width={260}
+                width={isMobile ? '100%' : 260}
                 value={runId}
                 placeholder="Select a run"
                 // Grouped by model tag so a re-run of the same model sits next
@@ -656,7 +710,7 @@ export default function ResizableWorkspacePage() {
               <Selector
                 label="Select case"
                 size="sm"
-                width={240}
+                width={isMobile ? '100%' : 240}
                 value={caseId}
                 placeholder="Select a case"
                 // visibleCases, not cases: fileFilter hides cases with no
@@ -673,12 +727,24 @@ export default function ResizableWorkspacePage() {
           }
           endContent={
             <HStack gap={3}>
-              <ProgressBar
-                label={`${gradedFiles}/${totalFiles} graded`}
-                value={totalFiles ? gradedFiles / totalFiles : 0}
-              />
+              {/* No ProgressBar here.
+
+                  Measured, not guessed: with the bar present the row is
+                  75 + 12 + 54 = 141px -- exactly the width TopNav's endContent
+                  slot allows. Hiding the bar and nothing else grows the button
+                  from 54px to 81px, which is the width "Grade all" actually
+                  needs. So the bar was not decoration next to the button; it
+                  was consuming the whole slot and the primary action was the
+                  thing that got squeezed to "Gr…" at every width, 1600
+                  included.
+
+                  Nothing is lost. The bar was labelled "N/M graded", and every
+                  file row in the tree already carries a pass/fail/not-graded
+                  StatusDot -- so the remaining work is legible per file, which
+                  is how a reviewer actually tracks it, rather than as one
+                  digit pair in the nav. */}
               <Button
-                label="Grade all files"
+                label="Grade all"
                 size="sm"
                 onClick={gradeAll}
                 isDisabled={!cases.find(c => c.id === caseId)}
@@ -693,8 +759,7 @@ export default function ResizableWorkspacePage() {
         <LayoutContent padding={0}>
           <Layout
             height="fill"
-            start={
-              isMobile ? undefined : (
+            start={(
                 <>
                   {!startPanel.isCollapsed && (
                     <LayoutPanel
@@ -737,7 +802,15 @@ export default function ResizableWorkspacePage() {
                             />
                           </Text>
                         ) : null}
-                        <TreeList items={fileTree} density="compact" />
+                        {/* aria-label, not a raw wrapper: TreeList renders
+                            role="tree" and the contract already forwards
+                            aria-label through to it. Without it the tree is
+                            announced as an unnamed list of buttons. */}
+                        <TreeList
+                          items={fileTree}
+                          density="compact"
+                          aria-label="Cases and files"
+                        />
                       </Stack>
                     </LayoutPanel>
                   )}
@@ -759,39 +832,51 @@ export default function ResizableWorkspacePage() {
                     <LayoutContent padding={0}>
                       <Stack direction="vertical" style={styles.contentFill}>
                         <TabList
+                          // `role="tablist"` switches Astryx from its
+                          // navigation pattern (plain buttons under a
+                          // `<nav>`) to the real tab widget: `role="tab"`
+                          // + `aria-selected` + roving tabindex on each item,
+                          // and arrow-key navigation. Each Tab names its
+                          // panel so `aria-controls` has a real target.
+                          role="tablist"
                           value={viewTab}
                           onChange={setViewTab}
                           size="sm"
                           hasDivider
                           style={styles.tabListPadding}>
-                          <Tab label="Transcript" value="chat" />
-                          <Tab label="Prompt" value="prompt" />
-                          <Tab label="Source" value="source" />
-                          <Tab label="Run info" value="info" />
+                          <Tab label="Transcript" value="chat" panelId="view-panel-chat" />
+                          <Tab label="Prompt" value="prompt" panelId="view-panel-prompt" />
+                          <Tab label="Source" value="source" panelId="view-panel-source" />
+                          <Tab label="Run info" value="info" panelId="view-panel-info" />
                         </TabList>
                         <StackItem size="fill" style={styles.editorArea}>
+                          {/* One panel element, id'd to match the active
+                              Tab's `panelId`. Without it every tab's
+                              `aria-controls` points at nothing. */}
+                          <LayoutContent
+                            role="tabpanel"
+                            id={`view-panel-${viewTab}`}
+                            padding={0}
+                            isScrollable={false}
+                            style={styles.editorArea}>
                           {viewTab === 'chat' && (
                             <Stack direction="vertical" padding={3} gap={3}>
                               {curCase ? (
                                 <>
                                   <ChatMessageList density="compact">
-                                    <ChatMessage sender="user" name="Prompt">
-                                      <ChatMessageBubble>
-                                        <Markdown>
-                                          {promptOf(curCase.attempts[0]) ||
-                                            '(no prompt captured)'}
-                                        </Markdown>
-                                      </ChatMessageBubble>
-                                    </ChatMessage>
-                                    {/* One assistant message PER ROUND, not
-                                        one wrapping all of them. With a
-                                        single bubble the reviewer saw "Round 1
-                                        ... Round 8" inside one message and
-                                        could not tell where one attempt ended
-                                        and the next began -- which is the
-                                        whole reason the round numbers exist.
-                                        The prompt is the only shared
-                                        context, so it stays its own message. */}
+                                    {/* One PAIR per round: that round's user
+                                        prompt, then that round's assistant
+                                        reply, interleaved.
+
+                                        This used to render
+                                        `promptOf(attempts[0])` -- a single
+                                        message above all eight replies -- so a
+                                        reviewer saw one prompt and concluded
+                                        the grader "only shows the first
+                                        prompt". Every attempt carries its own
+                                        system+user pair for the same case and
+                                        the prompt grows with each retry, so
+                                        all of them belong in the transcript. */}
                                     {/* Case-level artifact summary. This is
                                         NOT per-round: the files belong to the
                                         case, and repeating the same list once
@@ -852,8 +937,18 @@ export default function ResizableWorkspacePage() {
                                         The prompt is the only shared context, so
                                         it stays its own message above. */}
                                     {curCase.attempts.map((at, i) => (
+                                      <Fragment key={i}>
                                       <ChatMessage
-                                        key={i}
+                                        sender="user"
+                                        name={`Prompt — round ${at.round ?? i + 1}`}>
+                                        <ChatMessageBubble>
+                                          <Markdown density="compact">
+                                            {promptOf(at) ||
+                                              '(no prompt captured)'}
+                                          </Markdown>
+                                        </ChatMessageBubble>
+                                      </ChatMessage>
+                                      <ChatMessage
                                         sender="assistant"
                                         name={`Round ${at.round ?? i + 1}`}>
                                         <ChatMessageBubble>
@@ -967,6 +1062,7 @@ export default function ResizableWorkspacePage() {
                                           </VStack>
                                         </ChatMessageBubble>
                                       </ChatMessage>
+                                      </Fragment>
                                     ))}
                                   </ChatMessageList>
                                 </>
@@ -976,13 +1072,26 @@ export default function ResizableWorkspacePage() {
                             </Stack>
                           )}
                           {viewTab === 'prompt' && (
-                            <CodeBlock
-                              code={promptOf(curCase?.attempts[0]) || '(no prompt captured)'}
-                              language="markdown"
-                              container="section"
-                              hasCopyButton={false}
-                              size="sm"
-                            />
+                            // Every round's prompt, not just round 1's --
+                            // the same truncation the transcript tab had.
+                            // Labelled per round, because the retry prompts
+                            // grow and read as one wall otherwise.
+                            <Stack direction="vertical" gap={3}>
+                              {curCase?.attempts.map((at, i) => (
+                                <Stack key={i} direction="vertical" gap={1}>
+                                  <Text type="supporting" color="secondary">
+                                    Round {at.round ?? i + 1}
+                                  </Text>
+                                  <CodeBlock
+                                    code={promptOf(at) || '(no prompt captured)'}
+                                    language="markdown"
+                                    container="section"
+                                    hasCopyButton={false}
+                                    size="sm"
+                                  />
+                                </Stack>
+                              ))}
+                            </Stack>
                           )}
                           {viewTab === 'info' && (
                             <Stack direction="vertical" gap={4} padding={4}>
@@ -1028,7 +1137,7 @@ export default function ResizableWorkspacePage() {
                               {run?.buckets &&
                               Object.keys(run.buckets).length > 0 ? (
                                 <Stack direction="vertical" gap={2}>
-                                  <Heading level={3}>Buckets covered</Heading>
+                                  <Heading level={2}>Buckets covered</Heading>
                                   <MetadataList>
                                     {Object.entries(run.buckets).map(([b, n]) => (
                                       <MetadataListItem
@@ -1084,6 +1193,39 @@ export default function ResizableWorkspacePage() {
                           // resolve CodeBlock's width="100%" against -- without
                           // it the block measures 202px, its longest line.
                           <Stack direction="vertical" width="fill" gap={1}>
+                          {/* The rubric was a mutually exclusive rail tab, so
+                              the reviewer could see the anchors OR grade,
+                              never both -- every file was scored from memory.
+                              Collapsed by default: always present, never in
+                              the way. The rail tab stays as a full view. */}
+                          {curCase?.rubric && (
+                            <Collapsible
+                              trigger={
+                                <Text type="supporting" color="secondary">
+                                  Rubric:{' '}
+                                  {curCase.rubric.bucket ?? 'unbucketed'}, max{' '}
+                                  {curCase.rubric.max_score ?? '?'}
+                                </Text>
+                              }
+                              defaultIsOpen={false}>
+                              <Stack direction="vertical" gap={2}>
+                                {Object.entries(
+                                  curCase.rubric.pass_anchors ?? {},
+                                ).map(([check, anchors]) => (
+                                  <Stack key={check} direction="vertical" gap={1}>
+                                    <Text weight="bold">
+                                      {check.replace(/_/g, ' ')}
+                                    </Text>
+                                    {anchors.map((a, i) => (
+                                      <Text key={i} type="supporting">
+                                        {a}
+                                      </Text>
+                                    ))}
+                                  </Stack>
+                                ))}
+                              </Stack>
+                            </Collapsible>
+                          )}
                           <ContextMenu
                             label="File actions"
                             items={
@@ -1094,7 +1236,7 @@ export default function ResizableWorkspacePage() {
                                     {label: 'Clear grade', onClick: () => grade(picked.c, picked.a, null)},
                                     {type: 'divider'},
                                     {
-                                      label: lineStart
+                                      label: lineStart != null
                                         ? 'Note on lines'
                                         : 'Note on whole file',
                                       onClick: () =>
@@ -1145,6 +1287,7 @@ export default function ResizableWorkspacePage() {
                           </ContextMenu>
                           </Stack>
                           )}
+                          </LayoutContent>
                         </StackItem>
                       </Stack>
                     </LayoutContent>
@@ -1168,7 +1311,13 @@ export default function ResizableWorkspacePage() {
                         />
                         {!endPanel.isCollapsed && (
                           <LayoutPanel
-                            width={endPanel.size}
+                            // ponytail: a fixed 320px panel left the content
+                            // column 69px wide on a 390px phone -- the source
+                            // viewer fit one line per screen. A share of the
+                            // row keeps the panel usable and leaves the
+                            // transcript/source at least half the width. On
+                            // desktop this is exactly the dragged pixel size.
+                            width={isMobile ? '45%' : endPanel.size}
                             hasDivider={false}
                             padding={4}>
                             <Stack
@@ -1294,7 +1443,7 @@ export default function ResizableWorkspacePage() {
                                         to trace the file back to the run, and
                                         `activeFile` was duplicate state for
                                         `picked` that went stale on a case switch. */}
-                                    <Heading level={3} maxLines={1}>
+                                    <Heading level={2} maxLines={1}>
                                       {picked
                                         ? (picked.a.path.split('/').pop() ?? picked.a.path)
                                         : 'No file selected'}
@@ -1312,9 +1461,21 @@ export default function ResizableWorkspacePage() {
                                       {picked?.a.path ?? 'No file selected'}
                                     </Text>
                                   </Stack>
-                                  <MetadataList style={styles.metadataCompact}>
-                                    {picked && (
-                                      <HStack gap={2}>
+                                  {/*
+                                    The grade buttons and the shortcut line
+                                    used to live INSIDE this MetadataList.
+                                    A MetadataList is a <dl> whose grid only
+                                    understands <dt>/<dd> pairs, so those raw
+                                    HStack/Span children broke the track math:
+                                    every <dt> ballooned to 479px and all eight
+                                    <dd> values were pushed to x=1791 at width
+                                    0 -- the actual values were laid out 175px
+                                    outside the 320px panel and unreadable.
+                                    The list now holds only the facts; the
+                                    controls sit above it.
+                                  */}
+                                  {picked && (
+                                    <HStack gap={2}>
                                         <Button
                                           label="Pass"
                                           size="sm"
@@ -1332,12 +1493,12 @@ export default function ResizableWorkspacePage() {
                                           variant="ghost"
                                           onClick={() => grade(picked.c, picked.a, null)}
                                         />
-                                        <Button
-                                          label="Grade all files"
-                                          size="sm"
-                                          onClick={gradeAll}
-                                          isDisabled={!cases.find(c => c.id === caseId)}
-                                        />
+                                        {/* Grade all deliberately lives in the
+                                            TopNav and the file ContextMenu only.
+                                            A third copy here sat 8px from
+                                            "Fail" -- an irreversible bulk write
+                                            reading as a peer of a single-file
+                                            verdict. */}
                                         {/* Advances selection after a verdict
                                             instead of making the reviewer
                                             re-find their place in the tree.
@@ -1365,6 +1526,29 @@ export default function ResizableWorkspacePage() {
                                         />
                                       </HStack>
                                     )}
+                                    {/* Shortcuts existed only as a code comment.
+                                        Its own row below the button row, NOT
+                                        inside the HStack: in-row it took width
+                                        from Pass/Fail/Clear and crushed them to
+                                        15/11/16px at the cramped viewport. */}
+                                    {picked && (
+                                      <Text type="supporting" color="secondary">
+                                        Keys: P pass · F fail · C clear · J/K
+                                        next/prev · Enter next ungraded
+                                      </Text>
+                                    )}
+                                  <MetadataList
+                                    style={styles.metadataCompact}
+                                    // Label ABOVE value, not beside it. The
+                                    // side-by-side default builds a
+                                    // `grid-template-columns` from the
+                                    // widest LABEL, so in a narrow panel the
+                                    // label ate the whole track and the value
+                                    // column resolved to `0px` -- at 390px
+                                    // every fact rendered as an invisible
+                                    // zero-width <dd>. Stacked labels give the
+                                    // value the full width at any panel size.
+                                    label={{position: 'top'}}>
                                     {PROPERTIES.map(prop => (
                                       <MetadataListItem
                                         key={prop.label}
@@ -1461,7 +1645,7 @@ export default function ResizableWorkspacePage() {
     )}
     {confirmBulkReq && (
       <AlertDialog
-        title={`Pass all ${confirmBulkReq.count} files in ${confirmBulkReq.caseId}?`}
+        title={`Pass all ${confirmBulkReq.count} file${confirmBulkReq.count === 1 ? '' : 's'} in ${confirmBulkReq.caseId}?`}
         description={
           confirmBulkReq.skipped > 0
             ? `This marks ${confirmBulkReq.count} file(s) as PASS and leaves ${confirmBulkReq.skipped} already-graded file(s) untouched. Grades are saved immediately and can be changed per file afterwards.`

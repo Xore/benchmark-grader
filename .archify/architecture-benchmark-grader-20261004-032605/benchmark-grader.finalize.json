@@ -1,0 +1,1255 @@
+{
+  "schemaVersion": 1,
+  "ok": true,
+  "command": "finalize",
+  "status": "pass",
+  "type": "architecture",
+  "quality": "showcase",
+  "startedAt": "2026-10-04T01:27:21.035Z",
+  "specification": {
+    "path": "/home/xore/Desktop/benchmark-grader/.archify/architecture-benchmark-grader-20261004-032605/candidate.json",
+    "sha256": "f4c806f3b632e595eef3ca6b61bce2dfeb32e7b44048f886984d8a15bd47d5e6",
+    "bytes": 9835
+  },
+  "artifact": {
+    "path": "/home/xore/Desktop/benchmark-grader/.archify/architecture-benchmark-grader-20261004-032605/benchmark-grader.html",
+    "sha256": "0d5d6d61b0d2eb7762913c9792cdbee197dcb475bed58cca56017f79ef8fc6cb",
+    "bytes": 776576
+  },
+  "stages": {
+    "validate": {
+      "status": "pass",
+      "exitCode": 0,
+      "durationMs": null,
+      "execution": "embedded-in-deliver",
+      "command": [
+        "/home/xore/.hermes/tools/node-26.7.0-linux-x64/bin/node",
+        "/home/xore/.agents/skills/archify/bin/archify.mjs",
+        "deliver",
+        "architecture",
+        "/home/xore/Desktop/benchmark-grader/.archify/architecture-benchmark-grader-20261004-032605/candidate.json",
+        "/home/xore/Desktop/benchmark-grader/.archify/architecture-benchmark-grader-20261004-032605/benchmark-grader.html",
+        "--quality",
+        "showcase",
+        "--repo-root",
+        "/home/xore/Desktop/benchmark-grader",
+        "--json"
+      ],
+      "receipt": {
+        "schemaVersion": 1,
+        "ok": true,
+        "command": "validate",
+        "specification": {
+          "sha256": "f4c806f3b632e595eef3ca6b61bce2dfeb32e7b44048f886984d8a15bd47d5e6",
+          "bytes": 9835
+        },
+        "validation": {
+          "checksPassed": 9,
+          "checkCount": 9,
+          "compositionProfile": "showcase",
+          "compositionStatus": "pass",
+          "errors": 0,
+          "warnings": 0
+        }
+      }
+    },
+    "deliver": {
+      "status": "pass",
+      "exitCode": 0,
+      "durationMs": 514,
+      "command": [
+        "/home/xore/.hermes/tools/node-26.7.0-linux-x64/bin/node",
+        "/home/xore/.agents/skills/archify/bin/archify.mjs",
+        "deliver",
+        "architecture",
+        "/home/xore/Desktop/benchmark-grader/.archify/architecture-benchmark-grader-20261004-032605/candidate.json",
+        "/home/xore/Desktop/benchmark-grader/.archify/architecture-benchmark-grader-20261004-032605/benchmark-grader.html",
+        "--quality",
+        "showcase",
+        "--repo-root",
+        "/home/xore/Desktop/benchmark-grader",
+        "--json"
+      ],
+      "receipt": {
+        "schemaVersion": 1,
+        "receiptId": "298cebf0-89d9-4f04-a5ed-a344b9c9fda6",
+        "ok": true,
+        "command": "deliver",
+        "type": "architecture",
+        "input": "/home/xore/Desktop/benchmark-grader/.archify/architecture-benchmark-grader-20261004-032605/candidate.json",
+        "output": "/home/xore/Desktop/benchmark-grader/.archify/architecture-benchmark-grader-20261004-032605/benchmark-grader.html",
+        "specification": {
+          "sha256": "f4c806f3b632e595eef3ca6b61bce2dfeb32e7b44048f886984d8a15bd47d5e6",
+          "bytes": 9835
+        },
+        "artifact": {
+          "sha256": "0d5d6d61b0d2eb7762913c9792cdbee197dcb475bed58cca56017f79ef8fc6cb",
+          "bytes": 776576
+        },
+        "validation": {
+          "checksPassed": 9,
+          "checkCount": 9,
+          "compositionProfile": "showcase",
+          "compositionStatus": "pass",
+          "errors": 0,
+          "warnings": 0
+        },
+        "evidence": {
+          "verified": true,
+          "repository": "https://github.com/Xore/benchmark-grader",
+          "revision": "9182e518db226dfef4ba34300fca63fb59494fb1",
+          "references": 11
+        }
+      }
+    },
+    "check": {
+      "status": "pass",
+      "exitCode": 0,
+      "durationMs": 160,
+      "command": [
+        "/home/xore/.hermes/tools/node-26.7.0-linux-x64/bin/node",
+        "/home/xore/.agents/skills/archify/bin/archify.mjs",
+        "check",
+        "/home/xore/Desktop/benchmark-grader/.archify/architecture-benchmark-grader-20261004-032605/benchmark-grader.html",
+        "--require-provenance"
+      ],
+      "receipt": {
+        "ok": true,
+        "file": "/home/xore/Desktop/benchmark-grader/.archify/architecture-benchmark-grader-20261004-032605/benchmark-grader.html",
+        "artifact": {
+          "sha256": "0d5d6d61b0d2eb7762913c9792cdbee197dcb475bed58cca56017f79ef8fc6cb",
+          "bytes": 776576
+        },
+        "checks": [
+          {
+            "name": "single_svg",
+            "ok": true,
+            "details": [
+              "found 1 <svg> block(s)"
+            ]
+          },
+          {
+            "name": "finite_svg",
+            "ok": true,
+            "details": []
+          },
+          {
+            "name": "orthogonal_arrows",
+            "ok": true,
+            "details": []
+          },
+          {
+            "name": "label_route_clearance",
+            "ok": true,
+            "details": []
+          },
+          {
+            "name": "relationship_crossings",
+            "ok": true,
+            "details": []
+          },
+          {
+            "name": "relationship_corridors",
+            "ok": true,
+            "details": []
+          },
+          {
+            "name": "container_border_runs",
+            "ok": true,
+            "details": []
+          },
+          {
+            "name": "route_rhythm",
+            "ok": true,
+            "details": []
+          },
+          {
+            "name": "legend_clearance",
+            "ok": true,
+            "details": []
+          }
+        ],
+        "composition": {
+          "schemaVersion": 1,
+          "profile": "showcase",
+          "status": "pass",
+          "summary": {
+            "errors": 0,
+            "warnings": 0
+          },
+          "metrics": {
+            "properCrossings": 0,
+            "resolvedCrossovers": 9,
+            "ambiguousCorridors": 0,
+            "arrowheadCollisions": 0,
+            "containerBorderRuns": 0,
+            "labelRouteClearanceIssues": 0,
+            "labelCanvasOverflowIssues": 0,
+            "minLabelRouteClearance": 4.6,
+            "desktopReadabilityIssues": 0,
+            "viewportHeightIssues": 0,
+            "minProjectedNodeTextPx": 6.000000889101338,
+            "maxBends": 4,
+            "routesOverSuggestedBends": 6,
+            "maxStretch": 1.376,
+            "routesOverSuggestedStretch": 1,
+            "minSegmentPx": 16,
+            "minInteriorSegmentPx": 16,
+            "shortSegmentCount": 0,
+            "shortEndpointSegmentCount": 0,
+            "shortInteriorSegmentCount": 0,
+            "microSegmentCount": 0
+          },
+          "suggestedLimits": {
+            "bendsPerRelationship": 2,
+            "stretch": 1.35,
+            "segmentPx": 16,
+            "microSegmentPx": 8
+          },
+          "routeReview": {
+            "crossings": [
+              {
+                "left": {
+                  "id": "server-boot-build",
+                  "from": "server",
+                  "to": "client",
+                  "label": "Bun.build at boot → /app.js",
+                  "collectionIndex": 1,
+                  "artifactIndex": 2
+                },
+                "right": {
+                  "id": "client-server",
+                  "from": "client",
+                  "to": "server",
+                  "label": "fetch /api/* on state change",
+                  "collectionIndex": 6,
+                  "artifactIndex": 7
+                },
+                "point": [
+                  304,
+                  415.0000000000002
+                ],
+                "sharedNode": "server"
+              },
+              {
+                "left": {
+                  "id": "server-runs",
+                  "from": "server",
+                  "to": "transcripts",
+                  "label": "GET /api/runs, /api/run/:id",
+                  "collectionIndex": 2,
+                  "artifactIndex": 3
+                },
+                "right": {
+                  "id": "runner-transcripts",
+                  "from": "runner",
+                  "to": "transcripts",
+                  "label": "writes JSONL out-of-band",
+                  "collectionIndex": 10,
+                  "artifactIndex": 11
+                },
+                "point": [
+                  655,
+                  201
+                ],
+                "sharedNode": "transcripts"
+              },
+              {
+                "left": {
+                  "id": "server-grades",
+                  "from": "server",
+                  "to": "grades",
+                  "label": "GET / POST",
+                  "collectionIndex": 4,
+                  "artifactIndex": 5
+                },
+                "right": {
+                  "id": "client-chunker",
+                  "from": "client",
+                  "to": "chunker",
+                  "label": "chunkAnswer(turn.answer)",
+                  "collectionIndex": 7,
+                  "artifactIndex": 8
+                },
+                "point": [
+                  535.4,
+                  503
+                ]
+              },
+              {
+                "left": {
+                  "id": "server-grades",
+                  "from": "server",
+                  "to": "grades",
+                  "label": "GET / POST",
+                  "collectionIndex": 4,
+                  "artifactIndex": 5
+                },
+                "right": {
+                  "id": "client-shiki",
+                  "from": "client",
+                  "to": "shiki",
+                  "label": "tokenizer prop",
+                  "collectionIndex": 8,
+                  "artifactIndex": 9
+                },
+                "point": [
+                  535.4,
+                  560
+                ]
+              },
+              {
+                "left": {
+                  "id": "server-corpus",
+                  "from": "server",
+                  "to": "corpus",
+                  "label": "in-memory, no route",
+                  "collectionIndex": 5,
+                  "artifactIndex": 6
+                },
+                "right": {
+                  "id": "client-chunker",
+                  "from": "client",
+                  "to": "chunker",
+                  "label": "chunkAnswer(turn.answer)",
+                  "collectionIndex": 7,
+                  "artifactIndex": 8
+                },
+                "point": [
+                  527.4000000000001,
+                  503
+                ]
+              },
+              {
+                "left": {
+                  "id": "server-corpus",
+                  "from": "server",
+                  "to": "corpus",
+                  "label": "in-memory, no route",
+                  "collectionIndex": 5,
+                  "artifactIndex": 6
+                },
+                "right": {
+                  "id": "client-shiki",
+                  "from": "client",
+                  "to": "shiki",
+                  "label": "tokenizer prop",
+                  "collectionIndex": 8,
+                  "artifactIndex": 9
+                },
+                "point": [
+                  527.4000000000001,
+                  560
+                ]
+              },
+              {
+                "left": {
+                  "id": "server-corpus",
+                  "from": "server",
+                  "to": "corpus",
+                  "label": "in-memory, no route",
+                  "collectionIndex": 5,
+                  "artifactIndex": 6
+                },
+                "right": {
+                  "id": "verify-server",
+                  "from": "verify",
+                  "to": "server",
+                  "label": "drives the live SPA",
+                  "collectionIndex": 11,
+                  "artifactIndex": 12
+                },
+                "point": [
+                  346,
+                  384
+                ],
+                "sharedNode": "server"
+              },
+              {
+                "left": {
+                  "id": "client-chunker",
+                  "from": "client",
+                  "to": "chunker",
+                  "label": "chunkAnswer(turn.answer)",
+                  "collectionIndex": 7,
+                  "artifactIndex": 8
+                },
+                "right": {
+                  "id": "verify-server",
+                  "from": "verify",
+                  "to": "server",
+                  "label": "drives the live SPA",
+                  "collectionIndex": 11,
+                  "artifactIndex": 12
+                },
+                "point": [
+                  424,
+                  503
+                ]
+              },
+              {
+                "left": {
+                  "id": "client-shiki",
+                  "from": "client",
+                  "to": "shiki",
+                  "label": "tokenizer prop",
+                  "collectionIndex": 8,
+                  "artifactIndex": 9
+                },
+                "right": {
+                  "id": "verify-server",
+                  "from": "verify",
+                  "to": "server",
+                  "label": "drives the live SPA",
+                  "collectionIndex": 11,
+                  "artifactIndex": 12
+                },
+                "point": [
+                  424,
+                  560
+                ]
+              }
+            ],
+            "detours": [
+              {
+                "relationship": {
+                  "id": "grader-server",
+                  "from": "grader",
+                  "to": "server",
+                  "label": "HTTP :3020",
+                  "collectionIndex": 0,
+                  "artifactIndex": 1
+                },
+                "bends": 4,
+                "stretch": 1.376
+              },
+              {
+                "relationship": {
+                  "id": "server-runs",
+                  "from": "server",
+                  "to": "transcripts",
+                  "label": "GET /api/runs, /api/run/:id",
+                  "collectionIndex": 2,
+                  "artifactIndex": 3
+                },
+                "bends": 3,
+                "stretch": 1.088
+              },
+              {
+                "relationship": {
+                  "id": "server-corpus",
+                  "from": "server",
+                  "to": "corpus",
+                  "label": "in-memory, no route",
+                  "collectionIndex": 5,
+                  "artifactIndex": 6
+                },
+                "bends": 4,
+                "stretch": 1
+              },
+              {
+                "relationship": {
+                  "id": "client-server",
+                  "from": "client",
+                  "to": "server",
+                  "label": "fetch /api/* on state change",
+                  "collectionIndex": 6,
+                  "artifactIndex": 7
+                },
+                "bends": 3,
+                "stretch": 1.244
+              },
+              {
+                "relationship": {
+                  "id": "client-shiki",
+                  "from": "client",
+                  "to": "shiki",
+                  "label": "tokenizer prop",
+                  "collectionIndex": 8,
+                  "artifactIndex": 9
+                },
+                "bends": 3,
+                "stretch": 1
+              },
+              {
+                "relationship": {
+                  "id": "verify-server",
+                  "from": "verify",
+                  "to": "server",
+                  "label": "drives the live SPA",
+                  "collectionIndex": 11,
+                  "artifactIndex": 12
+                },
+                "bends": 3,
+                "stretch": 1.096,
+                "directCorridorBlockers": [
+                  {
+                    "id": "client",
+                    "label": "Astryx SPA",
+                    "box": [
+                      250,
+                      470,
+                      150,
+                      66
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          "leadingSpace": {
+            "measured": true,
+            "emptyTopPx": 96,
+            "emptyTopRatio": 0.105,
+            "occupiedTop": 96,
+            "viewBoxTop": 0,
+            "canvasHeight": 910,
+            "typicalNodeHeight": 62,
+            "reviewSuggested": false
+          },
+          "desktopReadability": {
+            "budgetBasis": "legacy-930",
+            "readerContract": "declared-wide-v1",
+            "availableDiagramWidth": 930,
+            "actualBudgetPx": 930,
+            "limit": "legacy",
+            "requestedTargetPx": 7.5,
+            "requestedTargetMet": false,
+            "hardFloorPx": 6,
+            "hardFloorMet": true,
+            "minimumOwner": {
+              "kind": "boundary",
+              "id": null
+            },
+            "minimumSourceTextPx": 6.748388096774193,
+            "minimumProjectedTextPx": 6.000000889101338,
+            "semanticTextCount": 36
+          },
+          "issues": []
+        },
+        "provenance": "current",
+        "deliveryReceiptId": "298cebf0-89d9-4f04-a5ed-a344b9c9fda6"
+      }
+    },
+    "browser-check": {
+      "status": "pass",
+      "exitCode": 0,
+      "durationMs": 2237,
+      "command": [
+        "/home/xore/.hermes/tools/node-26.7.0-linux-x64/bin/node",
+        "/home/xore/.agents/skills/archify/bin/archify.mjs",
+        "browser-check",
+        "/home/xore/Desktop/benchmark-grader/.archify/architecture-benchmark-grader-20261004-032605/benchmark-grader.html",
+        "--json",
+        "--require-provenance"
+      ],
+      "execution": "in-process",
+      "receipt": {
+        "schemaVersion": 1,
+        "ok": true,
+        "command": "browser-check",
+        "evidenceKind": "automated-browser",
+        "status": "pass",
+        "visualReview": "not-requested",
+        "provenance": "current",
+        "deliveryReceiptId": "298cebf0-89d9-4f04-a5ed-a344b9c9fda6",
+        "artifact": {
+          "path": "/home/xore/Desktop/benchmark-grader/.archify/architecture-benchmark-grader-20261004-032605/benchmark-grader.html",
+          "sha256": "0d5d6d61b0d2eb7762913c9792cdbee197dcb475bed58cca56017f79ef8fc6cb",
+          "bytes": 776576
+        },
+        "state": {
+          "detail": "read",
+          "motion": "still"
+        },
+        "chrome": {
+          "status": "available",
+          "executable": "/usr/bin/google-chrome"
+        },
+        "diagnostics": [],
+        "containment": {
+          "status": "pass",
+          "policy": "fit-or-reader-declared-readable-vertical-scroll",
+          "viewports": [
+            {
+              "width": 1440,
+              "height": 900,
+              "theme": "light",
+              "innerWidth": 1440,
+              "innerHeight": 900,
+              "scrollWidth": 1440,
+              "scrollHeight": 1079,
+              "overflowX": false,
+              "overflowY": true,
+              "verticalScrollAccepted": true,
+              "overflowDisposition": "readable-vertical-scroll",
+              "readerLayout": "adaptive",
+              "readerOverflow": "authored",
+              "readerFit": "intrinsic-height",
+              "ok": true,
+              "readerWidth": 1076,
+              "diagramWidth": 1046,
+              "pageComposition": {
+                "bodyPaddingPx": 12,
+                "headerPx": 78,
+                "diagramChromePx": 78,
+                "svgPx": 910,
+                "cardsPx": 0,
+                "viewBoxHeight": 910
+              },
+              "viewBoxWidth": 1046,
+              "minimumProjectedNodeTextPx": 6.748388096774193,
+              "minimumProjectedNonEdgeTextPx": 6.748388096774193,
+              "minimumProjectedEdgeTextPx": 8,
+              "minimumProjectedNodeText": "Read-only evidence on disk (RUN_DIR, default /tmp/roster-run)",
+              "minimumProjectedNodeTextDetail": "boundary",
+              "minimumProjectedNodeTextOwner": {
+                "kind": "boundary",
+                "id": null
+              },
+              "minimumRequiredNodeTextPx": 6,
+              "readabilityOk": true,
+              "hasLegend": true,
+              "hasNavigationDock": true,
+              "legendDockIntersectionArea": 0,
+              "dockStageIntersectionArea": 0,
+              "dockStageGap": 10,
+              "requiredDockStageGap": 10,
+              "viewerChromeStageOk": true,
+              "viewerChromeReserve": 54,
+              "viewerChromeActive": true,
+              "viewerChromeOk": true,
+              "resolvedTheme": "light"
+            },
+            {
+              "width": 1600,
+              "height": 1000,
+              "theme": "light",
+              "innerWidth": 1600,
+              "innerHeight": 1000,
+              "scrollWidth": 1600,
+              "scrollHeight": 1145,
+              "overflowX": false,
+              "overflowY": true,
+              "verticalScrollAccepted": true,
+              "overflowDisposition": "readable-vertical-scroll",
+              "readerLayout": "adaptive",
+              "readerOverflow": "authored",
+              "readerFit": "intrinsic-height",
+              "ok": true,
+              "readerWidth": 1076,
+              "diagramWidth": 1046,
+              "pageComposition": {
+                "bodyPaddingPx": 64,
+                "headerPx": 86,
+                "diagramChromePx": 84,
+                "svgPx": 910,
+                "cardsPx": 0,
+                "viewBoxHeight": 910
+              },
+              "viewBoxWidth": 1046,
+              "minimumProjectedNodeTextPx": 6.748388096774193,
+              "minimumProjectedNonEdgeTextPx": 6.748388096774193,
+              "minimumProjectedEdgeTextPx": 8,
+              "minimumProjectedNodeText": "Read-only evidence on disk (RUN_DIR, default /tmp/roster-run)",
+              "minimumProjectedNodeTextDetail": "boundary",
+              "minimumProjectedNodeTextOwner": {
+                "kind": "boundary",
+                "id": null
+              },
+              "minimumRequiredNodeTextPx": 6,
+              "readabilityOk": true,
+              "hasLegend": true,
+              "hasNavigationDock": true,
+              "legendDockIntersectionArea": 0,
+              "dockStageIntersectionArea": 0,
+              "dockStageGap": 10,
+              "requiredDockStageGap": 10,
+              "viewerChromeStageOk": true,
+              "viewerChromeReserve": 54,
+              "viewerChromeActive": true,
+              "viewerChromeOk": true,
+              "resolvedTheme": "light"
+            },
+            {
+              "width": 1920,
+              "height": 1080,
+              "theme": "light",
+              "innerWidth": 1920,
+              "innerHeight": 1080,
+              "scrollWidth": 1920,
+              "scrollHeight": 1145,
+              "overflowX": false,
+              "overflowY": true,
+              "verticalScrollAccepted": true,
+              "overflowDisposition": "readable-vertical-scroll",
+              "readerLayout": "adaptive",
+              "readerOverflow": "authored",
+              "readerFit": "intrinsic-height",
+              "ok": true,
+              "readerWidth": 1076,
+              "diagramWidth": 1046,
+              "pageComposition": {
+                "bodyPaddingPx": 64,
+                "headerPx": 86,
+                "diagramChromePx": 84,
+                "svgPx": 910,
+                "cardsPx": 0,
+                "viewBoxHeight": 910
+              },
+              "viewBoxWidth": 1046,
+              "minimumProjectedNodeTextPx": 6.748388096774193,
+              "minimumProjectedNonEdgeTextPx": 6.748388096774193,
+              "minimumProjectedEdgeTextPx": 8,
+              "minimumProjectedNodeText": "Read-only evidence on disk (RUN_DIR, default /tmp/roster-run)",
+              "minimumProjectedNodeTextDetail": "boundary",
+              "minimumProjectedNodeTextOwner": {
+                "kind": "boundary",
+                "id": null
+              },
+              "minimumRequiredNodeTextPx": 6,
+              "readabilityOk": true,
+              "hasLegend": true,
+              "hasNavigationDock": true,
+              "legendDockIntersectionArea": 0,
+              "dockStageIntersectionArea": 0,
+              "dockStageGap": 10,
+              "requiredDockStageGap": 10,
+              "viewerChromeStageOk": true,
+              "viewerChromeReserve": 54,
+              "viewerChromeActive": true,
+              "viewerChromeOk": true,
+              "resolvedTheme": "light"
+            },
+            {
+              "width": 2048,
+              "height": 1320,
+              "theme": "light",
+              "innerWidth": 2048,
+              "innerHeight": 1320,
+              "scrollWidth": 2048,
+              "scrollHeight": 1320,
+              "overflowX": false,
+              "overflowY": false,
+              "verticalScrollAccepted": false,
+              "overflowDisposition": "contained",
+              "readerLayout": "adaptive",
+              "readerOverflow": null,
+              "readerFit": "intrinsic-height",
+              "ok": true,
+              "readerWidth": 1264,
+              "diagramWidth": 1214,
+              "pageComposition": {
+                "bodyPaddingPx": 64,
+                "headerPx": 94,
+                "diagramChromePx": 94,
+                "svgPx": 1056,
+                "cardsPx": 0,
+                "viewBoxHeight": 910
+              },
+              "viewBoxWidth": 1046,
+              "minimumProjectedNodeTextPx": 6.748388096774193,
+              "minimumProjectedNonEdgeTextPx": 6.748388096774193,
+              "minimumProjectedEdgeTextPx": 8,
+              "minimumProjectedNodeText": "Read-only evidence on disk (RUN_DIR, default /tmp/roster-run)",
+              "minimumProjectedNodeTextDetail": "boundary",
+              "minimumProjectedNodeTextOwner": {
+                "kind": "boundary",
+                "id": null
+              },
+              "minimumRequiredNodeTextPx": 6,
+              "readabilityOk": true,
+              "hasLegend": true,
+              "hasNavigationDock": true,
+              "legendDockIntersectionArea": 0,
+              "dockStageIntersectionArea": 0,
+              "dockStageGap": 10,
+              "requiredDockStageGap": 10,
+              "viewerChromeStageOk": true,
+              "viewerChromeReserve": 44,
+              "viewerChromeActive": true,
+              "viewerChromeOk": true,
+              "resolvedTheme": "light"
+            }
+          ]
+        },
+        "themeStates": {
+          "status": "pass",
+          "viewports": [
+            {
+              "width": 1440,
+              "height": 900,
+              "requestedTheme": "light",
+              "resolvedTheme": "light",
+              "ok": true
+            },
+            {
+              "width": 1600,
+              "height": 1000,
+              "requestedTheme": "light",
+              "resolvedTheme": "light",
+              "ok": true
+            },
+            {
+              "width": 1920,
+              "height": 1080,
+              "requestedTheme": "light",
+              "resolvedTheme": "light",
+              "ok": true
+            },
+            {
+              "width": 2048,
+              "height": 1320,
+              "requestedTheme": "light",
+              "resolvedTheme": "light",
+              "ok": true
+            },
+            {
+              "width": 1440,
+              "height": 900,
+              "requestedTheme": "dark",
+              "resolvedTheme": "dark",
+              "ok": true
+            },
+            {
+              "width": 2048,
+              "height": 1320,
+              "requestedTheme": "dark",
+              "resolvedTheme": "dark",
+              "ok": true
+            }
+          ]
+        },
+        "readability": {
+          "status": "pass",
+          "minimumProjectedNodeTextPx": 6,
+          "viewports": [
+            {
+              "width": 1440,
+              "height": 900,
+              "theme": "light",
+              "innerWidth": 1440,
+              "innerHeight": 900,
+              "scrollWidth": 1440,
+              "scrollHeight": 1079,
+              "overflowX": false,
+              "overflowY": true,
+              "verticalScrollAccepted": true,
+              "overflowDisposition": "readable-vertical-scroll",
+              "readerLayout": "adaptive",
+              "readerOverflow": "authored",
+              "readerFit": "intrinsic-height",
+              "ok": true,
+              "readerWidth": 1076,
+              "diagramWidth": 1046,
+              "pageComposition": {
+                "bodyPaddingPx": 12,
+                "headerPx": 78,
+                "diagramChromePx": 78,
+                "svgPx": 910,
+                "cardsPx": 0,
+                "viewBoxHeight": 910
+              },
+              "viewBoxWidth": 1046,
+              "minimumProjectedNodeTextPx": 6.748388096774193,
+              "minimumProjectedNonEdgeTextPx": 6.748388096774193,
+              "minimumProjectedEdgeTextPx": 8,
+              "minimumProjectedNodeText": "Read-only evidence on disk (RUN_DIR, default /tmp/roster-run)",
+              "minimumProjectedNodeTextDetail": "boundary",
+              "minimumProjectedNodeTextOwner": {
+                "kind": "boundary",
+                "id": null
+              },
+              "minimumRequiredNodeTextPx": 6,
+              "readabilityOk": true,
+              "hasLegend": true,
+              "hasNavigationDock": true,
+              "legendDockIntersectionArea": 0,
+              "dockStageIntersectionArea": 0,
+              "dockStageGap": 10,
+              "requiredDockStageGap": 10,
+              "viewerChromeStageOk": true,
+              "viewerChromeReserve": 54,
+              "viewerChromeActive": true,
+              "viewerChromeOk": true,
+              "resolvedTheme": "light"
+            },
+            {
+              "width": 1600,
+              "height": 1000,
+              "theme": "light",
+              "innerWidth": 1600,
+              "innerHeight": 1000,
+              "scrollWidth": 1600,
+              "scrollHeight": 1145,
+              "overflowX": false,
+              "overflowY": true,
+              "verticalScrollAccepted": true,
+              "overflowDisposition": "readable-vertical-scroll",
+              "readerLayout": "adaptive",
+              "readerOverflow": "authored",
+              "readerFit": "intrinsic-height",
+              "ok": true,
+              "readerWidth": 1076,
+              "diagramWidth": 1046,
+              "pageComposition": {
+                "bodyPaddingPx": 64,
+                "headerPx": 86,
+                "diagramChromePx": 84,
+                "svgPx": 910,
+                "cardsPx": 0,
+                "viewBoxHeight": 910
+              },
+              "viewBoxWidth": 1046,
+              "minimumProjectedNodeTextPx": 6.748388096774193,
+              "minimumProjectedNonEdgeTextPx": 6.748388096774193,
+              "minimumProjectedEdgeTextPx": 8,
+              "minimumProjectedNodeText": "Read-only evidence on disk (RUN_DIR, default /tmp/roster-run)",
+              "minimumProjectedNodeTextDetail": "boundary",
+              "minimumProjectedNodeTextOwner": {
+                "kind": "boundary",
+                "id": null
+              },
+              "minimumRequiredNodeTextPx": 6,
+              "readabilityOk": true,
+              "hasLegend": true,
+              "hasNavigationDock": true,
+              "legendDockIntersectionArea": 0,
+              "dockStageIntersectionArea": 0,
+              "dockStageGap": 10,
+              "requiredDockStageGap": 10,
+              "viewerChromeStageOk": true,
+              "viewerChromeReserve": 54,
+              "viewerChromeActive": true,
+              "viewerChromeOk": true,
+              "resolvedTheme": "light"
+            },
+            {
+              "width": 1920,
+              "height": 1080,
+              "theme": "light",
+              "innerWidth": 1920,
+              "innerHeight": 1080,
+              "scrollWidth": 1920,
+              "scrollHeight": 1145,
+              "overflowX": false,
+              "overflowY": true,
+              "verticalScrollAccepted": true,
+              "overflowDisposition": "readable-vertical-scroll",
+              "readerLayout": "adaptive",
+              "readerOverflow": "authored",
+              "readerFit": "intrinsic-height",
+              "ok": true,
+              "readerWidth": 1076,
+              "diagramWidth": 1046,
+              "pageComposition": {
+                "bodyPaddingPx": 64,
+                "headerPx": 86,
+                "diagramChromePx": 84,
+                "svgPx": 910,
+                "cardsPx": 0,
+                "viewBoxHeight": 910
+              },
+              "viewBoxWidth": 1046,
+              "minimumProjectedNodeTextPx": 6.748388096774193,
+              "minimumProjectedNonEdgeTextPx": 6.748388096774193,
+              "minimumProjectedEdgeTextPx": 8,
+              "minimumProjectedNodeText": "Read-only evidence on disk (RUN_DIR, default /tmp/roster-run)",
+              "minimumProjectedNodeTextDetail": "boundary",
+              "minimumProjectedNodeTextOwner": {
+                "kind": "boundary",
+                "id": null
+              },
+              "minimumRequiredNodeTextPx": 6,
+              "readabilityOk": true,
+              "hasLegend": true,
+              "hasNavigationDock": true,
+              "legendDockIntersectionArea": 0,
+              "dockStageIntersectionArea": 0,
+              "dockStageGap": 10,
+              "requiredDockStageGap": 10,
+              "viewerChromeStageOk": true,
+              "viewerChromeReserve": 54,
+              "viewerChromeActive": true,
+              "viewerChromeOk": true,
+              "resolvedTheme": "light"
+            },
+            {
+              "width": 2048,
+              "height": 1320,
+              "theme": "light",
+              "innerWidth": 2048,
+              "innerHeight": 1320,
+              "scrollWidth": 2048,
+              "scrollHeight": 1320,
+              "overflowX": false,
+              "overflowY": false,
+              "verticalScrollAccepted": false,
+              "overflowDisposition": "contained",
+              "readerLayout": "adaptive",
+              "readerOverflow": null,
+              "readerFit": "intrinsic-height",
+              "ok": true,
+              "readerWidth": 1264,
+              "diagramWidth": 1214,
+              "pageComposition": {
+                "bodyPaddingPx": 64,
+                "headerPx": 94,
+                "diagramChromePx": 94,
+                "svgPx": 1056,
+                "cardsPx": 0,
+                "viewBoxHeight": 910
+              },
+              "viewBoxWidth": 1046,
+              "minimumProjectedNodeTextPx": 6.748388096774193,
+              "minimumProjectedNonEdgeTextPx": 6.748388096774193,
+              "minimumProjectedEdgeTextPx": 8,
+              "minimumProjectedNodeText": "Read-only evidence on disk (RUN_DIR, default /tmp/roster-run)",
+              "minimumProjectedNodeTextDetail": "boundary",
+              "minimumProjectedNodeTextOwner": {
+                "kind": "boundary",
+                "id": null
+              },
+              "minimumRequiredNodeTextPx": 6,
+              "readabilityOk": true,
+              "hasLegend": true,
+              "hasNavigationDock": true,
+              "legendDockIntersectionArea": 0,
+              "dockStageIntersectionArea": 0,
+              "dockStageGap": 10,
+              "requiredDockStageGap": 10,
+              "viewerChromeStageOk": true,
+              "viewerChromeReserve": 44,
+              "viewerChromeActive": true,
+              "viewerChromeOk": true,
+              "resolvedTheme": "light"
+            }
+          ]
+        },
+        "viewerChrome": {
+          "status": "pass",
+          "viewports": [
+            {
+              "width": 1440,
+              "height": 900,
+              "theme": "light",
+              "innerWidth": 1440,
+              "innerHeight": 900,
+              "scrollWidth": 1440,
+              "scrollHeight": 1079,
+              "overflowX": false,
+              "overflowY": true,
+              "verticalScrollAccepted": true,
+              "overflowDisposition": "readable-vertical-scroll",
+              "readerLayout": "adaptive",
+              "readerOverflow": "authored",
+              "readerFit": "intrinsic-height",
+              "ok": true,
+              "readerWidth": 1076,
+              "diagramWidth": 1046,
+              "pageComposition": {
+                "bodyPaddingPx": 12,
+                "headerPx": 78,
+                "diagramChromePx": 78,
+                "svgPx": 910,
+                "cardsPx": 0,
+                "viewBoxHeight": 910
+              },
+              "viewBoxWidth": 1046,
+              "minimumProjectedNodeTextPx": 6.748388096774193,
+              "minimumProjectedNonEdgeTextPx": 6.748388096774193,
+              "minimumProjectedEdgeTextPx": 8,
+              "minimumProjectedNodeText": "Read-only evidence on disk (RUN_DIR, default /tmp/roster-run)",
+              "minimumProjectedNodeTextDetail": "boundary",
+              "minimumProjectedNodeTextOwner": {
+                "kind": "boundary",
+                "id": null
+              },
+              "minimumRequiredNodeTextPx": 6,
+              "readabilityOk": true,
+              "hasLegend": true,
+              "hasNavigationDock": true,
+              "legendDockIntersectionArea": 0,
+              "dockStageIntersectionArea": 0,
+              "dockStageGap": 10,
+              "requiredDockStageGap": 10,
+              "viewerChromeStageOk": true,
+              "viewerChromeReserve": 54,
+              "viewerChromeActive": true,
+              "viewerChromeOk": true,
+              "resolvedTheme": "light"
+            },
+            {
+              "width": 1600,
+              "height": 1000,
+              "theme": "light",
+              "innerWidth": 1600,
+              "innerHeight": 1000,
+              "scrollWidth": 1600,
+              "scrollHeight": 1145,
+              "overflowX": false,
+              "overflowY": true,
+              "verticalScrollAccepted": true,
+              "overflowDisposition": "readable-vertical-scroll",
+              "readerLayout": "adaptive",
+              "readerOverflow": "authored",
+              "readerFit": "intrinsic-height",
+              "ok": true,
+              "readerWidth": 1076,
+              "diagramWidth": 1046,
+              "pageComposition": {
+                "bodyPaddingPx": 64,
+                "headerPx": 86,
+                "diagramChromePx": 84,
+                "svgPx": 910,
+                "cardsPx": 0,
+                "viewBoxHeight": 910
+              },
+              "viewBoxWidth": 1046,
+              "minimumProjectedNodeTextPx": 6.748388096774193,
+              "minimumProjectedNonEdgeTextPx": 6.748388096774193,
+              "minimumProjectedEdgeTextPx": 8,
+              "minimumProjectedNodeText": "Read-only evidence on disk (RUN_DIR, default /tmp/roster-run)",
+              "minimumProjectedNodeTextDetail": "boundary",
+              "minimumProjectedNodeTextOwner": {
+                "kind": "boundary",
+                "id": null
+              },
+              "minimumRequiredNodeTextPx": 6,
+              "readabilityOk": true,
+              "hasLegend": true,
+              "hasNavigationDock": true,
+              "legendDockIntersectionArea": 0,
+              "dockStageIntersectionArea": 0,
+              "dockStageGap": 10,
+              "requiredDockStageGap": 10,
+              "viewerChromeStageOk": true,
+              "viewerChromeReserve": 54,
+              "viewerChromeActive": true,
+              "viewerChromeOk": true,
+              "resolvedTheme": "light"
+            },
+            {
+              "width": 1920,
+              "height": 1080,
+              "theme": "light",
+              "innerWidth": 1920,
+              "innerHeight": 1080,
+              "scrollWidth": 1920,
+              "scrollHeight": 1145,
+              "overflowX": false,
+              "overflowY": true,
+              "verticalScrollAccepted": true,
+              "overflowDisposition": "readable-vertical-scroll",
+              "readerLayout": "adaptive",
+              "readerOverflow": "authored",
+              "readerFit": "intrinsic-height",
+              "ok": true,
+              "readerWidth": 1076,
+              "diagramWidth": 1046,
+              "pageComposition": {
+                "bodyPaddingPx": 64,
+                "headerPx": 86,
+                "diagramChromePx": 84,
+                "svgPx": 910,
+                "cardsPx": 0,
+                "viewBoxHeight": 910
+              },
+              "viewBoxWidth": 1046,
+              "minimumProjectedNodeTextPx": 6.748388096774193,
+              "minimumProjectedNonEdgeTextPx": 6.748388096774193,
+              "minimumProjectedEdgeTextPx": 8,
+              "minimumProjectedNodeText": "Read-only evidence on disk (RUN_DIR, default /tmp/roster-run)",
+              "minimumProjectedNodeTextDetail": "boundary",
+              "minimumProjectedNodeTextOwner": {
+                "kind": "boundary",
+                "id": null
+              },
+              "minimumRequiredNodeTextPx": 6,
+              "readabilityOk": true,
+              "hasLegend": true,
+              "hasNavigationDock": true,
+              "legendDockIntersectionArea": 0,
+              "dockStageIntersectionArea": 0,
+              "dockStageGap": 10,
+              "requiredDockStageGap": 10,
+              "viewerChromeStageOk": true,
+              "viewerChromeReserve": 54,
+              "viewerChromeActive": true,
+              "viewerChromeOk": true,
+              "resolvedTheme": "light"
+            },
+            {
+              "width": 2048,
+              "height": 1320,
+              "theme": "light",
+              "innerWidth": 2048,
+              "innerHeight": 1320,
+              "scrollWidth": 2048,
+              "scrollHeight": 1320,
+              "overflowX": false,
+              "overflowY": false,
+              "verticalScrollAccepted": false,
+              "overflowDisposition": "contained",
+              "readerLayout": "adaptive",
+              "readerOverflow": null,
+              "readerFit": "intrinsic-height",
+              "ok": true,
+              "readerWidth": 1264,
+              "diagramWidth": 1214,
+              "pageComposition": {
+                "bodyPaddingPx": 64,
+                "headerPx": 94,
+                "diagramChromePx": 94,
+                "svgPx": 1056,
+                "cardsPx": 0,
+                "viewBoxHeight": 910
+              },
+              "viewBoxWidth": 1046,
+              "minimumProjectedNodeTextPx": 6.748388096774193,
+              "minimumProjectedNonEdgeTextPx": 6.748388096774193,
+              "minimumProjectedEdgeTextPx": 8,
+              "minimumProjectedNodeText": "Read-only evidence on disk (RUN_DIR, default /tmp/roster-run)",
+              "minimumProjectedNodeTextDetail": "boundary",
+              "minimumProjectedNodeTextOwner": {
+                "kind": "boundary",
+                "id": null
+              },
+              "minimumRequiredNodeTextPx": 6,
+              "readabilityOk": true,
+              "hasLegend": true,
+              "hasNavigationDock": true,
+              "legendDockIntersectionArea": 0,
+              "dockStageIntersectionArea": 0,
+              "dockStageGap": 10,
+              "requiredDockStageGap": 10,
+              "viewerChromeStageOk": true,
+              "viewerChromeReserve": 44,
+              "viewerChromeActive": true,
+              "viewerChromeOk": true,
+              "resolvedTheme": "light"
+            }
+          ]
+        },
+        "captures": {
+          "status": "not-requested",
+          "screenshots": [],
+          "contactSheet": null
+        },
+        "sidecars": {
+          "receipt": "benchmark-grader.browser-check.json",
+          "files": []
+        }
+      }
+    }
+  },
+  "diagnostics": [],
+  "evidence": {
+    "receipt": "/home/xore/Desktop/benchmark-grader/.archify/architecture-benchmark-grader-20261004-032605/benchmark-grader.finalize.json",
+    "summaryReceipt": "/home/xore/Desktop/benchmark-grader/.archify/architecture-benchmark-grader-20261004-032605/benchmark-grader.finalize-summary.json",
+    "browserCheckReceipt": "/home/xore/Desktop/benchmark-grader/.archify/architecture-benchmark-grader-20261004-032605/benchmark-grader.browser-check.json"
+  },
+  "visualReview": "not-requested",
+  "finishedAt": "2026-10-04T01:27:24.472Z",
+  "durationMs": 3436
+}

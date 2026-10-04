@@ -1,0 +1,303 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "Benchmark Grader review dashboard",
+    "subtitle": "Bun static+API server, React SPA, Astryx design system only",
+    "output": ".archify/architecture-benchmark-grader-dashboard-20261004-171000/benchmark-grader-dashboard.html",
+    "quality_profile": "showcase",
+    "animation": "none",
+    "repository": {
+      "url": "https://github.com/Xore/benchmark-grader",
+      "provider": "github",
+      "link_mode": "web",
+      "revision": "169715b8d0000cfffe51e03a65b1a184be7d4de3"
+    },
+    "legend": {
+      "mode": "auto"
+    }
+  },
+  "layout": {
+    "mode": "grid",
+    "cols": 4,
+    "cellW": 200,
+    "cellH": 120,
+    "gapX": 110,
+    "gapY": 66
+  },
+  "components": [
+    {
+      "id": "reviewer",
+      "type": "frontend",
+      "label": "Reviewer",
+      "sublabel": "keyboard grading",
+      "row": 1,
+      "col": 0,
+      "sources": [
+        {
+          "path": "src/dashboard.tsx",
+          "line": 643,
+          "label": "AppShell entry"
+        }
+      ],
+      "size": [
+        200,
+        120
+      ]
+    },
+    {
+      "id": "shell",
+      "type": "frontend",
+      "label": "AppShell + TopNav",
+      "sublabel": "h1, 3 Selectors",
+      "row": 1,
+      "col": 1,
+      "sources": [
+        {
+          "path": "src/dashboard.tsx",
+          "line": 662,
+          "label": "TopNav"
+        }
+      ],
+      "size": [
+        200,
+        120
+      ]
+    },
+    {
+      "id": "startpanel",
+      "type": "frontend",
+      "label": "Start: TreeList",
+      "sublabel": "resizable, collapsible",
+      "row": 1,
+      "col": 2,
+      "sources": [
+        {
+          "path": "src/dashboard.tsx",
+          "line": 764,
+          "label": "startPanel"
+        }
+      ],
+      "size": [
+        200,
+        120
+      ]
+    },
+    {
+      "id": "tabs",
+      "type": "frontend",
+      "label": "Tabs: transcript",
+      "sublabel": "prompt / source / run",
+      "row": 2,
+      "col": 0,
+      "sources": [
+        {
+          "path": "src/dashboard.tsx",
+          "line": 834,
+          "label": "TabList"
+        }
+      ],
+      "size": [
+        200,
+        120
+      ]
+    },
+    {
+      "id": "endpanel",
+      "type": "frontend",
+      "label": "End: rubric",
+      "sublabel": "properties, grade",
+      "row": 1,
+      "col": 3,
+      "sources": [
+        {
+          "path": "src/dashboard.tsx",
+          "line": 1103,
+          "label": "MetadataList"
+        }
+      ],
+      "size": [
+        200,
+        120
+      ]
+    },
+    {
+      "id": "theme",
+      "type": "frontend",
+      "label": "Editable theme",
+      "sublabel": "rings + hit target",
+      "row": 2,
+      "col": 1,
+      "sources": [
+        {
+          "path": "src/themes/neutral/neutralTheme.ts",
+          "line": 458,
+          "label": "components overrides"
+        }
+      ],
+      "size": [
+        200,
+        120
+      ]
+    },
+    {
+      "id": "core",
+      "type": "external",
+      "label": "@astryxdesign/core",
+      "sublabel": "the only UI layer",
+      "row": 2,
+      "col": 2,
+      "sources": [
+        {
+          "path": "package.json",
+          "line": 1,
+          "label": "dependency"
+        }
+      ],
+      "size": [
+        200,
+        120
+      ]
+    },
+    {
+      "id": "shiki",
+      "type": "backend",
+      "label": "Shiki highlighter",
+      "sublabel": "pre-first-paint",
+      "row": 2,
+      "col": 3,
+      "sources": [
+        {
+          "path": "src/app.tsx",
+          "line": 17,
+          "label": "shikiReady()"
+        }
+      ],
+      "size": [
+        200,
+        120
+      ]
+    },
+    {
+      "id": "server",
+      "type": "backend",
+      "label": "Bun server",
+      "sublabel": "static + /api/run",
+      "row": 3,
+      "col": 3,
+      "sources": [
+        {
+          "path": "serve.ts",
+          "line": 575,
+          "label": "/api/run/"
+        }
+      ],
+      "size": [
+        200,
+        120
+      ]
+    },
+    {
+      "id": "rundata",
+      "type": "database",
+      "label": "Run + grades JSON",
+      "sublabel": "cases, attempts, files",
+      "row": 4,
+      "col": 3,
+      "sources": [
+        {
+          "path": "src/data.ts",
+          "line": 1,
+          "label": "run types"
+        }
+      ],
+      "size": [
+        200,
+        120
+      ]
+    }
+  ],
+  "boundaries": [
+    {
+      "kind": "region",
+      "label": "Browser",
+      "wraps": [
+        "reviewer",
+        "shell",
+        "startpanel",
+        "tabs",
+        "endpanel"
+      ]
+    },
+    {
+      "kind": "region",
+      "label": "Build + runtime deps",
+      "wraps": [
+        "theme",
+        "core",
+        "shiki"
+      ]
+    }
+  ],
+  "connections": [
+    {
+      "from": "reviewer",
+      "to": "shell",
+      "label": "keyboard",
+      "variant": "default"
+    },
+    {
+      "from": "shell",
+      "to": "startpanel",
+      "label": "pick case/file"
+    },
+    {
+      "from": "startpanel",
+      "to": "tabs",
+      "label": "selection"
+    },
+    {
+      "from": "tabs",
+      "to": "endpanel",
+      "label": "artifact"
+    },
+    {
+      "from": "tabs",
+      "to": "rundata",
+      "label": "reads"
+    },
+    {
+      "from": "shell",
+      "to": "core",
+      "label": "Astryx only",
+      "variant": "emphasis"
+    },
+    {
+      "from": "core",
+      "to": "theme",
+      "label": "overrides"
+    },
+    {
+      "from": "shiki",
+      "to": "tabs",
+      "label": "tokenises"
+    },
+    {
+      "from": "shell",
+      "to": "server",
+      "label": "GET run",
+      "variant": "dashed"
+    },
+    {
+      "from": "server",
+      "to": "rundata",
+      "label": "reads"
+    },
+    {
+      "from": "endpanel",
+      "to": "server",
+      "label": "PUT grades",
+      "variant": "dashed"
+    }
+  ]
+}
