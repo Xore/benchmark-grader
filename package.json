@@ -3,8 +3,11 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "start": "bun run --hot server.ts",
-    "dev": "bun run --hot server.ts"
+    "start": "bun run serve.ts",
+    "dev": "bun run --hot serve.ts",
+    "serve": "bun run serve.ts",
+    "verify:selftest": "bun run serve.ts --selftest",
+    "verify:ui": "bun run verify-ui.ts"
   },
   "dependencies": {
     "@astryxdesign/core": "^0.6.5",
