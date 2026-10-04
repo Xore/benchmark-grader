@@ -19,3 +19,4 @@ run-data/
 transcripts/
 grades/
 coder-artifacts/
+.archify/
