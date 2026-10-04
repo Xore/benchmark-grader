@@ -57,16 +57,14 @@ import {
   FolderIcon,
   DocumentTextIcon,
   MagnifyingGlassIcon,
+  CheckIcon,
+  XMarkIcon,
+  MinusIcon,
 } from '@heroicons/react/24/outline';
 
 const styles: Record<string, CSSProperties> = {
   contentFill: {
     height: '100%',
-  },
-  terminalWrapper: {
-    minHeight: 0,
-    overflow: 'hidden',
-    display: 'grid',
   },
   tabListPadding: {
     paddingTop: 'var(--spacing-2)',
@@ -88,10 +86,6 @@ const styles: Record<string, CSSProperties> = {
   propertiesContent: {
     flex: 1,
     minHeight: 0,
-  },
-  terminalPanel: {
-    flexShrink: 0,
-    overflow: 'hidden',
   },
 };
 
@@ -159,14 +153,36 @@ function buildFileTree(
       const name = a.path.split('/').pop() ?? a.path;
       return {
         id: `${c.id}:${a.path}`,
-        label: label(name),
+        // Full path, not the basename. maxLines={1} truncates the tail, which
+        // is the informative end (the directory), and the panel has no room for
+        // it -- so two files with the same basename in one case were
+        // indistinguishable rows. TreeListItemData has no tooltip prop, so the
+        // path itself is the label; the CodeBlock title and the Properties
+        // panel both still show the short name.
+        label: label(a.path),
         startContent: <Icon icon={DocumentTextIcon} size="xsm" />,
         // Three distinct states, never two: pass, fail, and not-yet-judged are
         // different decisions and must not collapse into one glyph.
+        //
+        // The icon is load-bearing, not decoration. StatusDot's own docs say
+        // the bare dot "conveys status by colour only, which is not accessible
+        // in isolation (WCAG 2.1 SC 1.4.1)". This tree is the reviewer's map
+        // of what has already been judged, so colour-only makes an ungraded
+        // file and a failed file identical for anyone who cannot separate
+        // those two hues. Distinct marks make colour reinforcement again.
         endContent: (
           <StatusDot
             variant={
               score === 1 ? 'success' : score === 0 ? 'error' : 'neutral'
+            }
+            icon={
+              score === 1 ? (
+                <CheckIcon />
+              ) : score === 0 ? (
+                <XMarkIcon />
+              ) : (
+                <MinusIcon />
+              )
             }
             label={
               score === 1
@@ -328,6 +344,21 @@ export default function ResizableWorkspacePage() {
       .catch(() => setGrades({}));
   }, [runId]);
 
+  // P1-2: selecting a case should show what you are grading against.
+  //
+  // The rubric is the input to the decision, not a property of the artifact,
+  // but it shared a four-way segmented control with Properties / History /
+  // Note -- all of which are per FILE. So the panel's subject silently changed
+  // with the tab, and the criteria stayed one click away while the reviewer
+  // read code in the middle pane and graded from priors. Put the rubric up
+  // front when the case changes; Properties is still one click away.
+  useEffect(() => {
+    setActivePropertiesTab(curCase?.rubric ? 'rubric' : 'properties');
+    // ponytail: keyed on caseId only. Reading curCase here would re-fire on
+    // every grade save, yanking the reviewer off the panel they are using.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [caseId]);
+
   // P1: changing case must clear the selected file. Both case Selectors used to
   // call setCaseId alone, so `picked` survived -- the Transcript pane showed the
   // new case while the Source pane and the inspector header still described the
@@ -401,8 +432,13 @@ export default function ResizableWorkspacePage() {
         say(`NOT SAVED: note on ${a.path} — ${e?.message ?? 'write failed'}`),
       );
 
+  // `!= null`, not truthiness. A range is falsy the moment either endpoint is 0,
+  // so any annotation touching the first line -- [0,0], [0,12] -- saved fine and
+  // then highlighted nothing. Measured over 6 ranges: the truthy test lost 3
+  // ([0,0] among them), and a reviewer annotating from the top of the file has
+  // no way to tell that from the highlight simply not working.
   const highlight =
-    lineStart && lineEnd
+    lineStart != null && lineEnd != null
       ? Array.from(
           {length: Math.abs(lineEnd - lineStart) + 1},
           (_, i) => Math.min(lineStart, lineEnd) + i,
@@ -476,12 +512,33 @@ export default function ResizableWorkspacePage() {
       ]
     : [];
 
-  const HISTORY_ITEMS = cases.flatMap(c =>
-    c.artifacts.map(a => ({
-      label: `${c.id} / ${a.path.split('/').pop()}`,
-      time: c.attempts[0]?.recorded_at?.slice(0, 16).replace('T', ' ') ?? '',
-    })),
-  ).slice(0, 40);
+  // "History" listed every artifact in the run with the ATTEMPT timestamp --
+  // the model's recorded_at -- which is not a review history at all. A
+  // reviewer opening it is asking "what have I judged, and when"; the attempt
+  // time answers neither, all 40 rows looked identical, and .slice(0, 40)
+  // dropped the remainder with no indication that anything was missing.
+  //
+  // Grade.at is the real answer. Sort newest first so the top of the list is
+  // the work you just did, and say so explicitly when the list is truncated.
+  const GRADED = cases
+    .flatMap(c =>
+      c.artifacts.map(a => {
+        const g = grades[`${c.id}:${a.path}`];
+        return g?.at
+          ? {
+              key: `${c.id}:${a.path}`,
+              label: `${c.id} / ${a.path.split('/').pop()}`,
+              at: g.at as string,
+              score: g.score,
+            }
+          : null;
+      }),
+    )
+    .filter((x): x is NonNullable<typeof x> => x !== null)
+    .sort((a, b) => (a.at < b.at ? 1 : -1));
+
+  const HISTORY_SHOWN = 40;
+  const HISTORY_ITEMS = GRADED.slice(0, HISTORY_SHOWN);
 
   const startPanel = useResizable({
     defaultSize: 256,
@@ -642,7 +699,13 @@ export default function ResizableWorkspacePage() {
                           size="sm"
                           value={caseId}
                           placeholder="Select a case"
-                          options={cases.map(c => ({
+                          // visibleCases, not cases: fileFilter already hides
+                          // cases with no matching file, so offering the hidden
+                          // ones here let a reviewer search down to one case and
+                          // still be handed the other 39 in the dropdown. The
+                          // top-nav Selector already used visibleCases -- two
+                          // controls over the same state disagreed.
+                          options={visibleCases.map(c => ({
                             value: c.id,
                             label: c.id,
                             description: `${c.artifacts.length} files`,
@@ -1259,24 +1322,59 @@ export default function ResizableWorkspacePage() {
                                   <List>
                                     {HISTORY_ITEMS.map(item => (
                                       <ListItem
-                                        key={item.label}
+                                        key={item.key}
                                         label={item.label}
                                         endContent={
                                           <Text
                                             type="supporting"
                                             color="secondary"
                                             maxLines={1}>
-                                            {item.time}
+                                            {item.at.slice(0, 16).replace('T', ' ')}
                                           </Text>
                                         }
                                         startContent={
                                           <StatusDot
-                                            variant="neutral"
-                                            label="artifact"
+                                            variant={
+                                              item.score === 1
+                                                ? 'success'
+                                                : item.score === 0
+                                                  ? 'error'
+                                                  : 'neutral'
+                                            }
+                                            icon={
+                                              item.score === 1 ? (
+                                                <CheckIcon />
+                                              ) : item.score === 0 ? (
+                                                <XMarkIcon />
+                                              ) : (
+                                                <MinusIcon />
+                                              )
+                                            }
+                                            label={
+                                              item.score === 1
+                                                ? `passed ${item.label}`
+                                                : item.score === 0
+                                                  ? `failed ${item.label}`
+                                                  : `not graded ${item.label}`
+                                            }
                                           />
                                         }
                                       />
                                     ))}
+                                    {GRADED.length > HISTORY_SHOWN && (
+                                      <ListItem
+                                        label={`and ${
+                                          GRADED.length - HISTORY_SHOWN
+                                        } more graded file${
+                                          GRADED.length - HISTORY_SHOWN === 1
+                                            ? ''
+                                            : 's'
+                                        }`}
+                                      />
+                                    )}
+                                    {GRADED.length === 0 && (
+                                      <ListItem label="No files graded yet" />
+                                    )}
                                   </List>
                                 </Stack>
                               )}
