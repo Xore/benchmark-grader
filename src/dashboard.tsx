@@ -33,7 +33,6 @@ import {TextArea} from '@astryxdesign/core/TextArea';
 import {Selector} from '@astryxdesign/core/Selector';
 import {Timestamp} from '@astryxdesign/core/Timestamp';
 import {Collapsible} from '@astryxdesign/core/Collapsible';
-import {ProgressBar} from '@astryxdesign/core/ProgressBar';
 import {tokenize} from './shiki-tokenizer';
 import {chunkAnswer} from './answer-chunks';
 import {
@@ -91,44 +90,6 @@ const styles: Record<string, CSSProperties> = {
   },
 };
 
-const EDITOR_CODE = `import {useState, useCallback} from 'react';
-import {Button} from '@astryxdesign/core/Button';
-import {Text} from '@astryxdesign/core/Text';
-
-const containerStyle = {
-  display: 'flex',
-  flexDirection: 'column',
-  gap: 8,
-  padding: 16,
-};
-const counterStyle = {
-  fontSize: 48,
-  fontWeight: 700,
-  fontVariantNumeric: 'tabular-nums',
-};
-
-export default function Counter() {
-  const [count, setCount] = useState(0);
-
-  const increment = useCallback(() => {
-    setCount(prev => prev + 1);
-  }, []);
-
-  const reset = useCallback(() => {
-    setCount(0);
-  }, []);
-
-  return (
-    <div style={containerStyle}>
-      <Text type="label">Counter</Text>
-      <span style={counterStyle}>
-        {count}
-      </span>
-      <Button label="Increment" onClick={increment} />
-      <Button label="Reset" variant="secondary" onClick={reset} />
-    </div>
-  );
-}`;
 
 
 function buildFileTree(
@@ -281,6 +242,10 @@ export default function ResizableWorkspacePage() {
   // and the button can never send you somewhere the tree does not show.
   // ponytail: linear scan on every render -- n is one run's artifacts (<= a few
   // hundred); a per-case memo buys nothing until it measurably hurts.
+  const navFiles = useMemo(
+    () => visibleCases.flatMap(c => c.artifacts.map(a => ({ c, a }))),
+    [visibleCases],
+  );
   const nextUngraded = useMemo(() => {
     const flat = visibleCases.flatMap(c =>
       c.artifacts.map(a => ({c, a})),
@@ -431,6 +396,39 @@ export default function ResizableWorkspacePage() {
         say(`NOT SAVED: ${a.path} — ${e?.message ?? 'write failed'}`),
       );
 
+  // ponytail: one window-level keydown instead of per-component handlers --
+  // shortcuts belong to the app, not to whichever pane happens to be mounted.
+  // Skipped a keymap registry; add when a binding needs remapping.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      // Never steal keys from a field the reviewer is typing in.
+      const t = e.target as HTMLElement | null;
+      if (t && (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName)))
+        return;
+      if (e.metaKey || e.ctrlKey || e.altKey) return;
+      const k = e.key.toLowerCase();
+      if (k === 'p' && picked) { e.preventDefault(); grade(picked.c, picked.a, 1); }
+      else if (k === 'f' && picked) { e.preventDefault(); grade(picked.c, picked.a, 0); }
+      else if (k === 'c' && picked) { e.preventDefault(); grade(picked.c, picked.a, null); }
+      else if ((k === 'j' || k === 'k') && navFiles.length) {
+        e.preventDefault();
+        const i = navFiles.findIndex(x => x.a.path === picked?.a.path);
+        // j = next, k = previous; wrap at both ends so the tree is a loop.
+        const n = (i < 0 ? -1 : i) + (k === 'j' ? 1 : -1);
+        const next = navFiles[((n % navFiles.length) + navFiles.length) % navFiles.length];
+        setPicked({ c: next.c, a: next.a });
+        setCaseId(next.c.id);
+        setNote(grades[`${next.c.id}:${next.a.path}`]?.note ?? '');
+      } else if (e.key === 'Enter' && nextUngraded) {
+        e.preventDefault();
+        setPicked({ c: nextUngraded.c, a: nextUngraded.a });
+        setCaseId(nextUngraded.c.id);
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [picked, navFiles, grades, nextUngraded, note]);
+
   /** Note anchored to a line range; falls back to the whole-file note. */
   const rangeNote = (c: Case, a: Artifact) => {
     const g = grades[`${c.id}:${a.path}`];
@@ -511,10 +509,6 @@ export default function ResizableWorkspacePage() {
 
   const curCase = cases.find(c => c.id === caseId);
   const totalFiles = cases.reduce((n, c) => n + c.artifacts.length, 0);
-  const gradedFiles = cases.reduce(
-    (n, c) => n + c.artifacts.filter(a => grades[`${c.id}:${a.path}`]?.score != null).length,
-    0,
-  );
 
   // real per-file facts for the inspector, replacing demo PROPERTIES
   const PROPERTIES = picked
@@ -618,13 +612,13 @@ export default function ResizableWorkspacePage() {
         <TopNav
           label="Benchmark grader"
           startContent={
-            <HStack gap={3}>
-              <Text>Benchmark Grader</Text>
-              <Selector
-                label="Select model"
-                size="sm"
-                width={180}
-                value={modelTag}
+            <HStack gap={3} wrap={isMobile ? 'wrap' : 'nowrap'} width="100%">
+            <Text>Benchmark Grader</Text>
+            <Selector
+              label="Select model"
+              size="sm"
+              width={isMobile ? '100%' : 180}
+              value={modelTag}
                 placeholder="All models"
                 options={[
                   {value: '', label: 'All models'},
@@ -635,7 +629,7 @@ export default function ResizableWorkspacePage() {
               <Selector
                 label="Select run"
                 size="sm"
-                width={260}
+                width={isMobile ? '100%' : 260}
                 value={runId}
                 placeholder="Select a run"
                 // Grouped by model tag so a re-run of the same model sits next
@@ -660,7 +654,7 @@ export default function ResizableWorkspacePage() {
               <Selector
                 label="Select case"
                 size="sm"
-                width={240}
+                width={isMobile ? '100%' : 240}
                 value={caseId}
                 placeholder="Select a case"
                 // visibleCases, not cases: fileFilter hides cases with no
@@ -1100,6 +1094,39 @@ export default function ResizableWorkspacePage() {
                           // resolve CodeBlock's width="100%" against -- without
                           // it the block measures 202px, its longest line.
                           <Stack direction="vertical" width="fill" gap={1}>
+                          {/* The rubric was a mutually exclusive rail tab, so
+                              the reviewer could see the anchors OR grade,
+                              never both -- every file was scored from memory.
+                              Collapsed by default: always present, never in
+                              the way. The rail tab stays as a full view. */}
+                          {curCase?.rubric && (
+                            <Collapsible
+                              trigger={
+                                <Text type="supporting" color="secondary">
+                                  Rubric:{' '}
+                                  {curCase.rubric.bucket ?? 'unbucketed'}, max{' '}
+                                  {curCase.rubric.max_score ?? '?'}
+                                </Text>
+                              }
+                              defaultIsOpen={false}>
+                              <Stack direction="vertical" gap={2}>
+                                {Object.entries(
+                                  curCase.rubric.pass_anchors ?? {},
+                                ).map(([check, anchors]) => (
+                                  <Stack key={check} direction="vertical" gap={1}>
+                                    <Text weight="bold">
+                                      {check.replace(/_/g, ' ')}
+                                    </Text>
+                                    {anchors.map((a, i) => (
+                                      <Text key={i} type="supporting">
+                                        {a}
+                                      </Text>
+                                    ))}
+                                  </Stack>
+                                ))}
+                              </Stack>
+                            </Collapsible>
+                          )}
                           <ContextMenu
                             label="File actions"
                             items={
@@ -1110,7 +1137,7 @@ export default function ResizableWorkspacePage() {
                                     {label: 'Clear grade', onClick: () => grade(picked.c, picked.a, null)},
                                     {type: 'divider'},
                                     {
-                                      label: lineStart
+                                      label: lineStart != null
                                         ? 'Note on lines'
                                         : 'Note on whole file',
                                       onClick: () =>
@@ -1348,12 +1375,12 @@ export default function ResizableWorkspacePage() {
                                           variant="ghost"
                                           onClick={() => grade(picked.c, picked.a, null)}
                                         />
-                                        <Button
-                                          label="Grade all"
-                                          size="sm"
-                                          onClick={gradeAll}
-                                          isDisabled={!cases.find(c => c.id === caseId)}
-                                        />
+                                        {/* Grade all deliberately lives in the
+                                            TopNav and the file ContextMenu only.
+                                            A third copy here sat 8px from
+                                            "Fail" -- an irreversible bulk write
+                                            reading as a peer of a single-file
+                                            verdict. */}
                                         {/* Advances selection after a verdict
                                             instead of making the reviewer
                                             re-find their place in the tree.
@@ -1477,7 +1504,7 @@ export default function ResizableWorkspacePage() {
     )}
     {confirmBulkReq && (
       <AlertDialog
-        title={`Pass all ${confirmBulkReq.count} files in ${confirmBulkReq.caseId}?`}
+        title={`Pass all ${confirmBulkReq.count} file${confirmBulkReq.count === 1 ? '' : 's'} in ${confirmBulkReq.caseId}?`}
         description={
           confirmBulkReq.skipped > 0
             ? `This marks ${confirmBulkReq.count} file(s) as PASS and leaves ${confirmBulkReq.skipped} already-graded file(s) untouched. Grades are saved immediately and can be changed per file afterwards.`
