@@ -5,7 +5,17 @@
 import {createRoot} from 'react-dom/client';
 
 import {Theme} from '@astryxdesign/core/theme';
-import {neutralTheme} from '@astryxdesign/theme-neutral/built';
+
+// The project's own editable copy of the neutral theme, not the shipped
+// build. It is currently byte-identical to
+// `@astryxdesign/theme-neutral/dist/theme.css` (verified by building it with
+// `astryx theme build` and diffing), and it now carries this app's two
+// component overrides — the Selector focus ring and the TreeList chevron hit
+// target — which the shipped build cannot hold. An unbuilt theme injects its
+// CSS at runtime; once this file is on the hot path for real, run
+// `astryx theme build src/themes/neutral/neutralTheme.ts --out
+// src/themes/neutral/neutral.css` and import the built output instead.
+import {neutralTheme} from './themes/neutral/neutralTheme';
 
 import Dashboard from './dashboard';
 

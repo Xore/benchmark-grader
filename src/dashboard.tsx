@@ -2,7 +2,7 @@
 
 'use client';
 
-import {useState, useMemo, useEffect, type CSSProperties} from 'react';
+import {useState, useMemo, useEffect, Fragment, type CSSProperties} from 'react';
 
 import {Layout, LayoutContent, LayoutPanel} from '@astryxdesign/core/Layout';
 import {ResizeHandle, useResizable} from '@astryxdesign/core/Resizable';
@@ -623,7 +623,21 @@ export default function ResizableWorkspacePage() {
     collapsedSize: 50,
   });
 
-  const isMobile = useMediaQuery('(max-width: 768px)');
+  // The file tree drops out below 900px, not 768: between those two widths the
+// 256px tree plus the 320px properties panel left the content column ~200px,
+// which is unusable for reading a transcript or a source file. The panel
+// widths below are share-of-viewport for the same reason.
+  const isMobile = useMediaQuery('(max-width: 900px)');
+
+  // Below 900px the tree and the properties panel cannot both keep their
+  // desktop pixel widths, so the TREE gives up its width first: it renders
+  // collapsed to its 50px handle and the reviewer reopens it from there.
+  // It is NOT unmounted -- that left no way to pick a file at all on a
+  // phone, since the case selector in the top nav chooses a case, not a file.
+  useEffect(() => {
+    if (isMobile) startPanel.collapse();
+    else startPanel.expand();
+  }, [isMobile]);
 
   return (
     <AppShell
@@ -649,7 +663,13 @@ export default function ResizableWorkspacePage() {
           label="Benchmark grader"
           startContent={
             <HStack gap={3} wrap={isMobile ? 'wrap' : 'nowrap'} width="100%">
-            <Text>Benchmark Grader</Text>
+            {/* level={1} renders a real <h1>. The <Text> that was here
+                rendered a <span>, so the app shipped zero top-level headings
+                and a screen reader had no document title to jump to.
+                TopNavHeading looks like the obvious choice but does not emit a
+                heading element — verified in TopNavHeading.js, it renders
+                spans and divs only. */}
+            <Heading level={1}>Benchmark Grader</Heading>
             <Selector
               label="Select model"
               size="sm"
@@ -739,8 +759,7 @@ export default function ResizableWorkspacePage() {
         <LayoutContent padding={0}>
           <Layout
             height="fill"
-            start={
-              isMobile ? undefined : (
+            start={(
                 <>
                   {!startPanel.isCollapsed && (
                     <LayoutPanel
@@ -783,7 +802,15 @@ export default function ResizableWorkspacePage() {
                             />
                           </Text>
                         ) : null}
-                        <TreeList items={fileTree} density="compact" />
+                        {/* aria-label, not a raw wrapper: TreeList renders
+                            role="tree" and the contract already forwards
+                            aria-label through to it. Without it the tree is
+                            announced as an unnamed list of buttons. */}
+                        <TreeList
+                          items={fileTree}
+                          density="compact"
+                          aria-label="Cases and files"
+                        />
                       </Stack>
                     </LayoutPanel>
                   )}
@@ -805,39 +832,51 @@ export default function ResizableWorkspacePage() {
                     <LayoutContent padding={0}>
                       <Stack direction="vertical" style={styles.contentFill}>
                         <TabList
+                          // `role="tablist"` switches Astryx from its
+                          // navigation pattern (plain buttons under a
+                          // `<nav>`) to the real tab widget: `role="tab"`
+                          // + `aria-selected` + roving tabindex on each item,
+                          // and arrow-key navigation. Each Tab names its
+                          // panel so `aria-controls` has a real target.
+                          role="tablist"
                           value={viewTab}
                           onChange={setViewTab}
                           size="sm"
                           hasDivider
                           style={styles.tabListPadding}>
-                          <Tab label="Transcript" value="chat" />
-                          <Tab label="Prompt" value="prompt" />
-                          <Tab label="Source" value="source" />
-                          <Tab label="Run info" value="info" />
+                          <Tab label="Transcript" value="chat" panelId="view-panel-chat" />
+                          <Tab label="Prompt" value="prompt" panelId="view-panel-prompt" />
+                          <Tab label="Source" value="source" panelId="view-panel-source" />
+                          <Tab label="Run info" value="info" panelId="view-panel-info" />
                         </TabList>
                         <StackItem size="fill" style={styles.editorArea}>
+                          {/* One panel element, id'd to match the active
+                              Tab's `panelId`. Without it every tab's
+                              `aria-controls` points at nothing. */}
+                          <LayoutContent
+                            role="tabpanel"
+                            id={`view-panel-${viewTab}`}
+                            padding={0}
+                            isScrollable={false}
+                            style={styles.editorArea}>
                           {viewTab === 'chat' && (
                             <Stack direction="vertical" padding={3} gap={3}>
                               {curCase ? (
                                 <>
                                   <ChatMessageList density="compact">
-                                    <ChatMessage sender="user" name="Prompt">
-                                      <ChatMessageBubble>
-                                        <Markdown>
-                                          {promptOf(curCase.attempts[0]) ||
-                                            '(no prompt captured)'}
-                                        </Markdown>
-                                      </ChatMessageBubble>
-                                    </ChatMessage>
-                                    {/* One assistant message PER ROUND, not
-                                        one wrapping all of them. With a
-                                        single bubble the reviewer saw "Round 1
-                                        ... Round 8" inside one message and
-                                        could not tell where one attempt ended
-                                        and the next began -- which is the
-                                        whole reason the round numbers exist.
-                                        The prompt is the only shared
-                                        context, so it stays its own message. */}
+                                    {/* One PAIR per round: that round's user
+                                        prompt, then that round's assistant
+                                        reply, interleaved.
+
+                                        This used to render
+                                        `promptOf(attempts[0])` -- a single
+                                        message above all eight replies -- so a
+                                        reviewer saw one prompt and concluded
+                                        the grader "only shows the first
+                                        prompt". Every attempt carries its own
+                                        system+user pair for the same case and
+                                        the prompt grows with each retry, so
+                                        all of them belong in the transcript. */}
                                     {/* Case-level artifact summary. This is
                                         NOT per-round: the files belong to the
                                         case, and repeating the same list once
@@ -898,8 +937,18 @@ export default function ResizableWorkspacePage() {
                                         The prompt is the only shared context, so
                                         it stays its own message above. */}
                                     {curCase.attempts.map((at, i) => (
+                                      <Fragment key={i}>
                                       <ChatMessage
-                                        key={i}
+                                        sender="user"
+                                        name={`Prompt — round ${at.round ?? i + 1}`}>
+                                        <ChatMessageBubble>
+                                          <Markdown density="compact">
+                                            {promptOf(at) ||
+                                              '(no prompt captured)'}
+                                          </Markdown>
+                                        </ChatMessageBubble>
+                                      </ChatMessage>
+                                      <ChatMessage
                                         sender="assistant"
                                         name={`Round ${at.round ?? i + 1}`}>
                                         <ChatMessageBubble>
@@ -1013,6 +1062,7 @@ export default function ResizableWorkspacePage() {
                                           </VStack>
                                         </ChatMessageBubble>
                                       </ChatMessage>
+                                      </Fragment>
                                     ))}
                                   </ChatMessageList>
                                 </>
@@ -1022,13 +1072,26 @@ export default function ResizableWorkspacePage() {
                             </Stack>
                           )}
                           {viewTab === 'prompt' && (
-                            <CodeBlock
-                              code={promptOf(curCase?.attempts[0]) || '(no prompt captured)'}
-                              language="markdown"
-                              container="section"
-                              hasCopyButton={false}
-                              size="sm"
-                            />
+                            // Every round's prompt, not just round 1's --
+                            // the same truncation the transcript tab had.
+                            // Labelled per round, because the retry prompts
+                            // grow and read as one wall otherwise.
+                            <Stack direction="vertical" gap={3}>
+                              {curCase?.attempts.map((at, i) => (
+                                <Stack key={i} direction="vertical" gap={1}>
+                                  <Text type="supporting" color="secondary">
+                                    Round {at.round ?? i + 1}
+                                  </Text>
+                                  <CodeBlock
+                                    code={promptOf(at) || '(no prompt captured)'}
+                                    language="markdown"
+                                    container="section"
+                                    hasCopyButton={false}
+                                    size="sm"
+                                  />
+                                </Stack>
+                              ))}
+                            </Stack>
                           )}
                           {viewTab === 'info' && (
                             <Stack direction="vertical" gap={4} padding={4}>
@@ -1074,7 +1137,7 @@ export default function ResizableWorkspacePage() {
                               {run?.buckets &&
                               Object.keys(run.buckets).length > 0 ? (
                                 <Stack direction="vertical" gap={2}>
-                                  <Heading level={3}>Buckets covered</Heading>
+                                  <Heading level={2}>Buckets covered</Heading>
                                   <MetadataList>
                                     {Object.entries(run.buckets).map(([b, n]) => (
                                       <MetadataListItem
@@ -1224,6 +1287,7 @@ export default function ResizableWorkspacePage() {
                           </ContextMenu>
                           </Stack>
                           )}
+                          </LayoutContent>
                         </StackItem>
                       </Stack>
                     </LayoutContent>
@@ -1247,7 +1311,13 @@ export default function ResizableWorkspacePage() {
                         />
                         {!endPanel.isCollapsed && (
                           <LayoutPanel
-                            width={endPanel.size}
+                            // ponytail: a fixed 320px panel left the content
+                            // column 69px wide on a 390px phone -- the source
+                            // viewer fit one line per screen. A share of the
+                            // row keeps the panel usable and leaves the
+                            // transcript/source at least half the width. On
+                            // desktop this is exactly the dragged pixel size.
+                            width={isMobile ? '45%' : endPanel.size}
                             hasDivider={false}
                             padding={4}>
                             <Stack
@@ -1373,7 +1443,7 @@ export default function ResizableWorkspacePage() {
                                         to trace the file back to the run, and
                                         `activeFile` was duplicate state for
                                         `picked` that went stale on a case switch. */}
-                                    <Heading level={3} maxLines={1}>
+                                    <Heading level={2} maxLines={1}>
                                       {picked
                                         ? (picked.a.path.split('/').pop() ?? picked.a.path)
                                         : 'No file selected'}
@@ -1391,9 +1461,21 @@ export default function ResizableWorkspacePage() {
                                       {picked?.a.path ?? 'No file selected'}
                                     </Text>
                                   </Stack>
-                                  <MetadataList style={styles.metadataCompact}>
-                                    {picked && (
-                                      <HStack gap={2}>
+                                  {/*
+                                    The grade buttons and the shortcut line
+                                    used to live INSIDE this MetadataList.
+                                    A MetadataList is a <dl> whose grid only
+                                    understands <dt>/<dd> pairs, so those raw
+                                    HStack/Span children broke the track math:
+                                    every <dt> ballooned to 479px and all eight
+                                    <dd> values were pushed to x=1791 at width
+                                    0 -- the actual values were laid out 175px
+                                    outside the 320px panel and unreadable.
+                                    The list now holds only the facts; the
+                                    controls sit above it.
+                                  */}
+                                  {picked && (
+                                    <HStack gap={2}>
                                         <Button
                                           label="Pass"
                                           size="sm"
@@ -1455,6 +1537,18 @@ export default function ResizableWorkspacePage() {
                                         next/prev · Enter next ungraded
                                       </Text>
                                     )}
+                                  <MetadataList
+                                    style={styles.metadataCompact}
+                                    // Label ABOVE value, not beside it. The
+                                    // side-by-side default builds a
+                                    // `grid-template-columns` from the
+                                    // widest LABEL, so in a narrow panel the
+                                    // label ate the whole track and the value
+                                    // column resolved to `0px` -- at 390px
+                                    // every fact rendered as an invisible
+                                    // zero-width <dd>. Stacked labels give the
+                                    // value the full width at any panel size.
+                                    label={{position: 'top'}}>
                                     {PROPERTIES.map(prop => (
                                       <MetadataListItem
                                         key={prop.label}
