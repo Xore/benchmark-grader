@@ -1029,6 +1029,20 @@ export default function ResizableWorkspacePage() {
                             hasLineNumbers
                             highlightLines={highlight}
                             tokenizer={tokenizer}
+                            // MUST be 'spans', not the 'auto' default.
+                            //
+                            // 'auto' renders tokens through the CSS Custom
+                            // Highlight API whenever the browser has it (Chrome
+                            // does). That paints the highlighting onto an EMPTY
+                            // <code> element -- the text lives in
+                            // CSS.highlights, not in the DOM -- so the source
+                            // viewer renders a bare title bar with no code at
+                            // all. SSR and the old verification could never see
+                            // it because neither has CSS.highlights, so
+                            // renderToString happily produced a full <pre>.
+                            // 'spans' emits real <span> children and works
+                            // everywhere.
+                            highlightMode="spans"
                             hasCopyButton
                             size="sm"
                             width="100%"

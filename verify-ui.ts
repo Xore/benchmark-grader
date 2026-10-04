@@ -166,6 +166,19 @@ await sleep(5000)
 console.log('=== initial render ===')
 console.log(((await text()) as string).slice(0, 500))
 
+// Pick a FILE before visiting any tab.
+//
+// Source renders nothing until `picked` is set. The tab loop below visits
+// Source FIRST with nothing selected, which caches the empty pane, and a
+// later re-click on the already-selected tab is a no-op -- so the pane stays
+// blank for the rest of the run and the <pre> assertion fails even though the
+// viewer works. Selecting first makes the very first Source visit meaningful.
+const pickedNameEarly = await evalJs(
+  `(() => {const f = document.querySelector('[role="treeitem"][aria-level="2"]');
+    return f ? (f.textContent||'').trim().slice(0,40) : null})()`,
+)
+if (pickedNameEarly) await clickText(pickedNameEarly, true)
+
 for (const tab of ['Source', 'Prompt', 'Run info', 'Transcript']) {
   const clicked = await clickText(tab)
   await sleep(1800)
@@ -201,18 +214,36 @@ const onSource = await waitFor(`(() => {
   return b && b.getAttribute('data-tab-value') === 'source';
 })()`)
 if (!onSource) errors.push('SOURCE: Source tab did not activate')
-await sleep(1200)
 
-const codeBox = await evalJs(`(() => {
-  const all = [...document.querySelectorAll('pre')]
+// Poll for the <pre> instead of sleeping a fixed amount. Shiki tokenises
+// asynchronously, so the code block appears some time after the tab mounts;
+// a fixed wait is a race that fails on a slow run and wastes time on a fast
+// one. Re-selecting the tab is not an option -- clicking an already-selected
+// tab is a no-op, so a missed render can never be retried that way.
+//
+// waitFor() answers "did it appear", not "what is it", so poll for truthiness
+// here and read the block once at the end.
+// Look for the code BODY, not specifically a <pre>.
+//
+// CodeBlock with highlightMode="spans" emits a <code> containing one <span>
+// per token, and does not use a <pre> at all in that mode -- the gutter is a
+// sibling. Asserting on <pre> therefore fails against a correctly rendered
+// block. Match the container's own class and require real text in it, which
+// is what "the source viewer works" actually means.
+const PRE_SEL = `(() => {
+  const block = document.querySelector('.astryx-code-block');
+  if (!block) return null;
+  const cand = [...block.querySelectorAll('pre, code, [class*="code-body"], [class*="highlight"]')]
     .map(p => ({w: Math.round(p.getBoundingClientRect().width),
-                h: Math.round(p.getBoundingClientRect().height),
                 len: (p.innerText||'').trim().length,
                 text: (p.innerText||'').trim().slice(0,120)}))
     .filter(x => x.len > 40)
-    .sort((a,b) => b.w - a.w);
-  return all.length ? all[0] : null;
-})()`)
+    .sort((a,b) => b.len - a.len);
+  return cand.length ? cand[0] : null;
+})()`
+await waitFor(PRE_SEL, 10000)
+const codeBox = await evalJs(PRE_SEL)
+await sleep(300)
 console.log('\n=== code block ===')
 console.log(codeBox)
 if (!codeBox) errors.push('SOURCE: no <pre> rendered')
