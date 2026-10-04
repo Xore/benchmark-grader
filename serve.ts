@@ -11,6 +11,7 @@
 import {readdirSync, readFileSync, statSync} from 'node:fs'
 import {join} from 'node:path'
 import {mkdirSync, writeFileSync} from 'node:fs'
+import {renameSync, rmdirSync} from 'node:fs'
 
 const ROOT = '/home/xore/Desktop/benchmark-grader'
 const RUN_DIR = process.env.RUN_DIR ?? '/tmp/smoke-tr'
@@ -337,9 +338,46 @@ function readGrades(): Record<string, unknown> {
   }
 }
 
+// ponytail: whole-file rewrite, no database. The read-modify-write below spans
+// a file, so it must be atomic ACROSS processes -- a second `bun run serve` on
+// another port (the dev server while the UI gate runs) silently dropped 2 of 6
+// concurrent grades, each writer holding a stale copy read before the other's
+// write landed. mkdir is the only portable atomic create here; retries then
+// bounded, because a stuck lock must not wedge the write path forever.
+const LOCK_DIR = GRADES_FILE + '.lock'
+let held = false
+function withGradesLock<T>(fn: () => T): T {
+  if (held) return fn() // already inside a lock in this process; mkdir would self-deadlock
+  for (let attempt = 0; ; attempt++) {
+    try {
+      mkdirSync(LOCK_DIR)
+      break
+    } catch {
+      if (attempt > 200) {
+        // A stale lock from a killed server would otherwise block every write
+        // permanently. 200 x 10ms = 2s of a live writer is not a real stall.
+        try { rmdirSync(LOCK_DIR) } catch {}
+        continue
+      }
+      Bun.sleepSync(10)
+    }
+  }
+  held = true
+  try {
+    return fn()
+  } finally {
+    held = false
+    try { rmdirSync(LOCK_DIR) } catch {}
+  }
+}
+
+// Write to a sibling temp file and rename: a reader must never see a half
+// written grades.json, and a crash mid-write must not destroy every grade.
 function writeGrades(g: Record<string, unknown>) {
   mkdirSync(ROOT, {recursive: true})
-  writeFileSync(GRADES_FILE, JSON.stringify(g, null, 2))
+  const tmp = GRADES_FILE + '.tmp'
+  writeFileSync(tmp, JSON.stringify(g, null, 2))
+  renameSync(tmp, GRADES_FILE)
 }
 
 // ---------------------------------------------------------------------- server
@@ -460,58 +498,70 @@ Bun.serve({
       if (req.method === 'GET') return Response.json(readGrades())
       if (req.method === 'POST') {
         const body = (await req.json()) as Record<string, unknown>
-        const all = readGrades()
-        const key = String(body.run ?? 'unknown')
-        const runGrades = ((all[key] as Record<string, unknown>) ?? {}) as Record<
-          string,
-          unknown
-        >
-        // per-file grade
-        const fileKey = body.file as string | undefined
-        if (fileKey) {
-          const files = ((runGrades.files as Record<string, unknown>) ?? {}) as Record<
+        // Trust boundary. The UI only ever sends 1 | 0 | null, but the endpoint
+        // accepted anything: `{"score":7}` persisted a 7, which then reads back
+        // as "Not graded" (see the inspector's score === 1 / === 0 checks) --
+        // a silently-lost write. Reject rather than coerce, so the caller finds
+        // out instead of the reviewer finding out weeks later.
+        if (
+          body.score !== undefined &&
+          body.score !== null &&
+          body.score !== 0 &&
+          body.score !== 1
+        )
+          return new Response('score must be 0, 1 or null', {status: 400})
+        // The read and the write must be one critical section, or a concurrent
+        // writer's grade is silently overwritten. `all` is re-read INSIDE the
+        // lock: reading it before would keep a stale snapshot either way.
+        return withGradesLock(() => {
+          const all = readGrades()
+          const key = String(body.run ?? 'unknown')
+          const runGrades = ((all[key] as Record<string, unknown>) ?? {}) as Record<
             string,
             unknown
           >
-          const prev = (files[fileKey] ?? {}) as {
-            score?: number | null
-            note?: string
-            lineNotes?: {lineStart?: number; lineEnd?: number; note: string}[]
-          }
-          const at = new Date().toISOString()
-          // A line note is anchored to a range; a bare file note is not.
-          const ls = body.lineStart as number | undefined
-          const le = body.lineEnd as number | undefined
-          if (ls !== undefined || le !== undefined) {
-            const kept = (prev.lineNotes ?? []).filter(
-              n => !(n.lineStart === ls && n.lineEnd === le),
-            )
-            if (body.note) kept.push({lineStart: ls, lineEnd: le, note: String(body.note)})
-            files[fileKey] = {...prev, lineNotes: kept, at}
-          } else {
-            files[fileKey] = {
-              ...prev,
-              score: body.score ?? null,
-              note: body.note ?? '',
-              at,
+          // per-file grade
+          const fileKey = body.file as string | undefined
+          if (fileKey) {
+            const files = ((runGrades.files as Record<string, unknown>) ?? {}) as Record<
+              string,
+              unknown
+            >
+            const prev = (files[fileKey] ?? {}) as {
+              score?: number | null
+              note?: string
+              lineNotes?: {lineStart?: number; lineEnd?: number; note: string}[]
             }
+            const at = new Date().toISOString()
+            // A line note is anchored to a range; a bare file note is not.
+            const ls = body.lineStart as number | undefined
+            const le = body.lineEnd as number | undefined
+            if (ls !== undefined || le !== undefined) {
+              const kept = (prev.lineNotes ?? []).filter(
+                n => !(n.lineStart === ls && n.lineEnd === le),
+              )
+              if (body.note) kept.push({lineStart: ls, lineEnd: le, note: String(body.note), at})
+              files[fileKey] = {...prev, lineNotes: kept, at}
+            } else {
+              files[fileKey] = {
+                ...prev,
+                score: body.score ?? null,
+                note: body.note ?? '',
+                at,
+              }
+            }
+            runGrades.files = files
           }
-          runGrades.files = files
-        }
-        // whole-run grade
-        if (body.case !== undefined && fileKey === undefined) {
-          runGrades.caseScores = {
-            ...((runGrades.caseScores as Record<string, unknown>) ?? {}),
-            [String(body.case)]: {
-              score: body.score ?? null,
-              note: body.note ?? '',
-              at: new Date().toISOString(),
-            },
-          }
-        }
-        all[key] = runGrades
-        writeGrades(all)
-        return Response.json({ok: true})
+          // No case-level grade: the dashboard grades per FILE and a reviewer can
+          // pass 9 of 10 files. A case verdict was never read back by anything
+          // (grep: two hits, both in this writer), so it was write-only state
+          // that looked like a persisted decision. Delete it when a case verdict
+          // becomes a real screen.
+          all[key] = runGrades
+          writeGrades(all)
+
+          return Response.json({ok: true})
+        })
       }
       return new Response('method not allowed', {status: 405})
     }
