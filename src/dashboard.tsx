@@ -440,10 +440,18 @@ export default function ResizableWorkspacePage() {
         setPicked({ c: next.c, a: next.a });
         setCaseId(next.c.id);
         setNote(grades[`${next.c.id}:${next.a.path}`]?.note ?? '');
+        // Land on the SOURCE pane, not whatever tab was showing. Moving
+        // selection without moving the view means you grade the new file
+        // against the previous file's transcript -- the two panes disagree,
+        // which is the exact failure this tool cannot afford. The
+        // "Next ungraded" button already does this; j/k must match it.
+        setViewTab('source');
       } else if (e.key === 'Enter' && nextUngraded) {
         e.preventDefault();
         setPicked({ c: nextUngraded.c, a: nextUngraded.a });
         setCaseId(nextUngraded.c.id);
+        setNote(grades[`${nextUngraded.c.id}:${nextUngraded.a.path}`]?.note ?? '');
+        setViewTab('source');
       }
     };
     window.addEventListener('keydown', onKey);
