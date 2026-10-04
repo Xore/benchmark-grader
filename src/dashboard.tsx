@@ -31,6 +31,8 @@ import {Markdown} from '@astryxdesign/core/Markdown';
 import {NumberInput} from '@astryxdesign/core/NumberInput';
 import {TextArea} from '@astryxdesign/core/TextArea';
 import {Selector} from '@astryxdesign/core/Selector';
+import {Timestamp} from '@astryxdesign/core/Timestamp';
+import {Collapsible} from '@astryxdesign/core/Collapsible';
 import {ProgressBar} from '@astryxdesign/core/ProgressBar';
 import {tokenize} from './shiki-tokenizer';
 import {chunkAnswer} from './answer-chunks';
@@ -269,6 +271,31 @@ export default function ResizableWorkspacePage() {
     (n, c) => n + c.artifacts.length,
     0,
   );
+  // The single highest-value accelerator for a 40-file case: jump to the next
+  // ungraded file instead of re-scanning the tree after every verdict. Built
+  // from the SAME visibleCases the tree renders, so the search filter applies
+  // and the button can never send you somewhere the tree does not show.
+  // ponytail: linear scan on every render -- n is one run's artifacts (<= a few
+  // hundred); a per-case memo buys nothing until it measurably hurts.
+  const nextUngraded = useMemo(() => {
+    const flat = visibleCases.flatMap(c =>
+      c.artifacts.map(a => ({c, a})),
+    );
+    const start = picked
+      ? flat.findIndex(
+          ({c, a}) => c.id === picked.c.id && a.path === picked.a.path,
+        ) + 1
+      : 0;
+    // Wrap around: at the end of the list, "next ungraded" means the first one
+    // you have not reached yet, not "nothing left".
+    for (const pass of [flat.slice(start), flat.slice(0, start)]) {
+      const hit = pass.find(
+        ({c, a}) => grades[`${c.id}:${a.path}`]?.score == null,
+      );
+      if (hit) return hit;
+    }
+    return null;
+  }, [visibleCases, picked, grades]);
   // ponytail: must NOT live inside the `viewTab === 'source'` branch -- a
   // hook called conditionally makes React throw "Rendered fewer hooks than
   // expected" and the whole app unmounts, which reads as "the server crashed".
@@ -507,7 +534,13 @@ export default function ResizableWorkspacePage() {
     },
     {
       label: 'Graded at',
-      value: grades[`${picked.c.id}:${picked.a.path}`]?.at ?? 'not graded',
+      // Was the raw ISO string ("2026-10-04T02:52:33.412Z"), printed verbatim
+      // into a 320px panel where it wraps. Timestamp renders it as a readable
+      // local time with the full value still available.
+      value: (() => {
+        const at = grades[`${picked.c.id}:${picked.a.path}`]?.at;
+        return at ? <Timestamp value={at} format="date_time" /> : 'not graded';
+      })(),
     },
       ]
     : [];
@@ -750,160 +783,191 @@ export default function ResizableWorkspacePage() {
                                         </Markdown>
                                       </ChatMessageBubble>
                                     </ChatMessage>
-                                    <ChatMessage sender="assistant" name={curCase.id}>
-                                      <ChatMessageBubble>
-                                        <VStack gap={2}>
-                                          {curCase.artifacts.length === 0 ? (
-                                            // ponytail: the runner writes no
-                                            // coder-artifacts/ when every
-                                            // response failed to parse
-                                            // (response.raw === ''). Saying
-                                            // "0 generated files" there reads
-                                            // as a finished, empty run; it is
-                                            // not. Say what actually happened.
-                                            <Text type="supporting">
-                                              No artifacts:{' '}
-                                              {curCase.attempts.every(
-                                                a => !a.response?.raw,
-                                              )
-                                                ? 'every model response failed to parse (response.raw is empty), so the runner wrote no files'
-                                                : 'the runner has not written coder-artifacts/ yet'}
-                                              .
-                                            </Text>
-                                          ) : (
-                                            <>
-                                              <Text>
-                                                {curCase.artifacts.length}{' '}
-                                                generated file
-                                                {curCase.artifacts.length === 1
-                                                  ? ''
-                                                  : 's'}
+                                    {/* One assistant message PER ROUND, not
+                                        one wrapping all of them. With a
+                                        single bubble the reviewer saw "Round 1
+                                        ... Round 8" inside one message and
+                                        could not tell where one attempt ended
+                                        and the next began -- which is the
+                                        whole reason the round numbers exist.
+                                        The prompt is the only shared
+                                        context, so it stays its own message. */}
+                                    {/* Case-level artifact summary. This is
+                                        NOT per-round: the files belong to the
+                                        case, and repeating the same list once
+                                        per attempt was noise. */}
+                                    {curCase.artifacts.length === 0 ? (
+                                      // ponytail: the runner writes no
+                                      // coder-artifacts/ when every response
+                                      // failed to parse (response.raw === '').
+                                      // Saying "0 generated files" there reads
+                                      // as a finished, empty run; it is not.
+                                      <Text type="supporting">
+                                        No artifacts:{' '}
+                                        {curCase.attempts.every(a => !a.response?.raw)
+                                          ? 'every model response failed to parse (response.raw is empty), so the runner wrote no files'
+                                          : 'the runner has not written coder-artifacts/ yet'}
+                                        .
+                                      </Text>
+                                    ) : (
+                                      <Stack direction="vertical" gap={1}>
+                                        <Text>
+                                          {curCase.artifacts.length} generated file
+                                          {curCase.artifacts.length === 1 ? '' : 's'}
+                                        </Text>
+                                        {curCase.artifacts.map(a => (
+                                          <HStack key={a.path}>
+                                            <Text>{a.path.split('/').pop()}</Text>
+                                            <Button
+                                              label={
+                                                // Three states, not two. This label
+                                                // used to collapse a FAILED file
+                                                // into "Grade", making a deliberate
+                                                // rejection look identical to an
+                                                // untouched file -- so a reviewer
+                                                // re-grades what they rejected.
+                                                grades[`${curCase.id}:${a.path}`]?.score === 1
+                                                  ? 'Passed'
+                                                  : grades[`${curCase.id}:${a.path}`]?.score === 0
+                                                    ? 'Failed'
+                                                    : 'Not graded'
+                                              }
+                                              size="sm"
+                                              variant="ghost"
+                                              onClick={() => {
+                                                setPicked({c: curCase, a});
+                                                setViewTab('source');
+                                              }}
+                                            />
+                                          </HStack>
+                                        ))}
+                                      </Stack>
+                                    )}
+                                    {/* One assistant message PER ROUND, not one
+                                        wrapping all of them. In a single bubble
+                                        "Round 1 ... Round 8" ran together and
+                                        you could not tell where one attempt
+                                        ended and the next began -- which is the
+                                        whole reason the round numbers exist.
+                                        The prompt is the only shared context, so
+                                        it stays its own message above. */}
+                                    {curCase.attempts.map((at, i) => (
+                                      <ChatMessage
+                                        key={i}
+                                        sender="assistant"
+                                        name={`Round ${at.round ?? i + 1}`}>
+                                        <ChatMessageBubble>
+                                          <VStack gap={2}>
+                                            {/* Round and VERDICT share one line:
+                                                they are what the reviewer is
+                                                judging. The four telemetry
+                                                numbers behind them used to be
+                                                dot-appended to that same
+                                                sentence -- five facts with no
+                                                hierarchy, where you read tokens
+                                                instead of the verdict. */}
+                                            <HStack gap={2}>
+                                              <Text type="supporting" color="secondary">
+                                                Round {at.round ?? i + 1}
                                               </Text>
-                                          {curCase.artifacts.map(a => (
-                                            <HStack key={a.path}>
-                                              <Text>
-                                                {a.path.split('/').pop()}
-                                              </Text>
-                                              <Button
-                                                label={
-                                                  // Three states, not two. This
-                                                  // label used to collapse a FAILED
-                                                  // file into "Grade", making a
-                                                  // deliberate rejection look
-                                                  // identical to an untouched file
-                                                  // -- so a reviewer re-grades
-                                                  // what they already rejected.
-                                                  grades[`${curCase.id}:${a.path}`]
-                                                    ?.score === 1
-                                                    ? 'Passed'
-                                                    : grades[
-                                                        `${curCase.id}:${a.path}`
-                                                      ]?.score === 0
-                                                      ? 'Failed'
-                                                      : 'Not graded'
-                                                }
+                                              <Token
+                                                label={at.outcome ?? 'unknown'}
                                                 size="sm"
-                                                variant="ghost"
-                                                onClick={() => {
-                                                  setPicked({c: curCase, a});
-                                                  setViewTab('source');
-                                                }}
                                               />
                                             </HStack>
-                                          ))}
-                                            </>
-                                          )}
-                                          {/* The model answer itself. The
-                                              artifact list above only names
-                                              the files the runner wrote; the
-                                              text the model actually produced is
-                                              the thing under review, and
-                                              response.raw holds it. Old builds
-                                              dropped this entirely, so the
-                                              transcript pane showed filenames
-                                              with no output behind them. */}
-                                          {curCase.attempts.map((at, i) => (
-                                            <Stack key={i} direction="vertical" gap={1}>
-                                              {/* Round number, because "8
-                                                  attempts" with no ordering is
-                                                  unreviewable -- a retry and a
-                                                  first try look identical. */}
-                                              <Text type="supporting" color="secondary">
-                                                Round {at.round ?? i + 1} ·{' '}
-                                                {at.outcome ?? 'unknown'}
-                                                {at.timing?.output_tokens != null &&
-                                                  ` · ${at.timing.output_tokens} out tok`}
-                                                {at.timing?.prompt_tokens != null &&
-                                                  ` · ${at.timing.prompt_tokens} in tok`}
-                                                {at.timing?.tokens_per_second != null &&
-                                                  ` · ${at.timing.tokens_per_second} tok/s`}
-                                                {at.timing?.done_reason &&
-                                                  ` · ${at.timing.done_reason}`}
-                                              </Text>
-                                              {at.degenerate || at.repetition_ratio != null ? (
-                                                <HStack gap={2}>
-                                                  <StatusDot
-                                                    variant={
-                                                      at.degenerate ? 'error' : 'warning'
-                                                    }
-                                                    label={
-                                                      at.degenerate
-                                                        ? 'degenerate output'
-                                                        : 'repetition detected'
-                                                    }
-                                                  />
+                                            {at.timing &&
+                                              (at.timing.output_tokens != null ||
+                                                at.timing.prompt_tokens != null ||
+                                                at.timing.tokens_per_second != null ||
+                                                at.timing.done_reason) && (
+                                                <Collapsible
+                                                  trigger={
+                                                    <Text type="supporting" color="secondary">
+                                                      Timing
+                                                    </Text>
+                                                  }
+                                                  defaultIsOpen={false}>
                                                   <Text type="supporting" color="secondary">
-                                                    {at.degenerate
-                                                      ? 'Degenerate output — repeating loop, grade this fail'
-                                                      : `Repetition ratio ${(at.repetition_ratio ?? 0).toFixed(2)}`}
+                                                    {[
+                                                      at.timing.output_tokens != null &&
+                                                        `${at.timing.output_tokens} out tok`,
+                                                      at.timing.prompt_tokens != null &&
+                                                        `${at.timing.prompt_tokens} in tok`,
+                                                      at.timing.tokens_per_second != null &&
+                                                        `${at.timing.tokens_per_second} tok/s`,
+                                                      at.timing.done_reason &&
+                                                        `stop: ${at.timing.done_reason}`,
+                                                    ]
+                                                      .filter(Boolean)
+                                                      .join(' · ')}
                                                   </Text>
-                                                </HStack>
-                                              ) : null}
-                                              {at.response?.raw ? (
-                                                chunkAnswer(at.response.raw).map(
-                                                  (chunk, j) =>
-                                                    chunk.kind === 'code' ? (
-                                                      <CodeBlock
-                                                        key={j}
-                                                        code={chunk.text}
-                                                        // chunkAnswer strips the
-                                                        // fences and keeps no
-                                                        // language, so the case's
-                                                        // artifact language is the
-                                                        // only real signal. It is
-                                                        // wrong for a fenced block in
-                                                        // a second language -- fixing
-                                                        // that means carrying `lang`
-                                                        // through chunkAnswer.
-                                                        language={
-                                                          curCase.artifacts[0]?.lang ??
-                                                          'plaintext'
-                                                        }
-                                                        tokenizer={tokenizer}
-                                                        hasLineNumbers
-                                                        hasCopyButton
-                                                        size="sm"
-                                                        maxHeight={420}
-                                                      />
-                                                    ) : (
-                                                      <Markdown
-                                                        key={j}
-                                                        density="compact"
-                                                      >
-                                                        {chunk.text}
-                                                      </Markdown>
-                                                    ),
-                                                )
-                                              ) : (
-                                                <Text type="supporting" color="secondary">
-                                                  (empty response)
-                                                </Text>
+                                                </Collapsible>
                                               )}
-                                            </Stack>
-                                          ))}
-                                        </VStack>
-                                      </ChatMessageBubble>
-                                    </ChatMessage>
+                                            {at.degenerate ||
+                                            at.repetition_ratio != null ? (
+                                              <HStack gap={2}>
+                                                <StatusDot
+                                                  variant={at.degenerate ? 'error' : 'warning'}
+                                                  label={
+                                                    at.degenerate
+                                                      ? 'degenerate output'
+                                                      : 'repetition detected'
+                                                  }
+                                                />
+                                                <Text type="supporting" color="secondary">
+                                                  {at.degenerate
+                                                    ? 'Degenerate output — repeating loop, grade this fail'
+                                                    : `Repetition ratio ${(at.repetition_ratio ?? 0).toFixed(2)}`}
+                                                </Text>
+                                              </HStack>
+                                            ) : null}
+                                            {/* The model answer itself. The
+                                                artifact list above only names the
+                                                files the runner wrote; the text
+                                                the model actually produced is the
+                                                thing under review, and
+                                                response.raw holds it. Old builds
+                                                dropped this entirely, so the
+                                                transcript pane showed filenames
+                                                with no output behind them. */}
+                                            {at.response?.raw ? (
+                                              chunkAnswer(at.response.raw).map((chunk, j) =>
+                                                chunk.kind === 'code' ? (
+                                                  <CodeBlock
+                                                    key={j}
+                                                    code={chunk.text}
+                                                    // chunkAnswer strips the fences
+                                                    // and keeps no language, so the
+                                                    // case's artifact language is the
+                                                    // only real signal. It is wrong
+                                                    // for a fenced block in a second
+                                                    // language -- fixing that means
+                                                    // carrying `lang` through
+                                                    // chunkAnswer.
+                                                    language={
+                                                      curCase.artifacts[0]?.lang ?? 'plaintext'
+                                                    }
+                                                    tokenizer={tokenizer}
+                                                    hasLineNumbers
+                                                    hasCopyButton
+                                                    size="sm"
+                                                    maxHeight={420}
+                                                  />
+                                                ) : (
+                                                  <Markdown key={j} density="compact">
+                                                    {chunk.text}
+                                                  </Markdown>
+                                                ),
+                                              )
+                                            ) : (
+                                              <Text type="supporting" color="secondary">
+                                                (empty response)
+                                              </Text>
+                                            )}
+                                          </VStack>
+                                        </ChatMessageBubble>
+                                      </ChatMessage>
+                                    ))}
                                   </ChatMessageList>
                                 </>
                               ) : (
@@ -992,7 +1056,16 @@ export default function ResizableWorkspacePage() {
                               />
                               <MetadataListItem
                                 label="Recorded"
-                                children={curCase?.attempts[0]?.recorded_at ?? '-'}
+                                children={
+                                  curCase?.attempts[0]?.recorded_at ? (
+                                    <Timestamp
+                                      value={curCase.attempts[0].recorded_at}
+                                      format="date_time"
+                                    />
+                                  ) : (
+                                    '-'
+                                  )
+                                }
                               />
                               </MetadataList>
                             </Stack>
@@ -1264,6 +1337,31 @@ export default function ResizableWorkspacePage() {
                                           size="sm"
                                           onClick={gradeAll}
                                           isDisabled={!cases.find(c => c.id === caseId)}
+                                        />
+                                        {/* Advances selection after a verdict
+                                            instead of making the reviewer
+                                            re-find their place in the tree.
+                                            Disabled when every VISIBLE file is
+                                            already graded -- which is honest:
+                                            the search filter can hide ungraded
+                                            files, and this button must not claim
+                                            there is nothing left when the tree in
+                                            front of you is not the whole run. */}
+                                        <Button
+                                          label={
+                                            nextUngraded
+                                              ? `Next ungraded: ${nextUngraded.a.path.split('/').pop()}`
+                                              : 'All files graded'
+                                          }
+                                          size="sm"
+                                          variant="secondary"
+                                          isDisabled={!nextUngraded}
+                                          onClick={() => {
+                                            if (!nextUngraded) return;
+                                            setPicked({c: nextUngraded.c, a: nextUngraded.a});
+                                            setCaseId(nextUngraded.c.id);
+                                            setViewTab('source');
+                                          }}
                                         />
                                       </HStack>
                                     )}

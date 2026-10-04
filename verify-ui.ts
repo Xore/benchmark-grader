@@ -161,6 +161,25 @@ async function waitFor(expr: string, ms = 15000): Promise<boolean> {
   return false
 }
 
+// Desktop width first, then the cramped one.
+//
+// The old gate ran only at Chrome's default 780px, where the three resizable
+// panels are 256 + 523 + 202: the inspector is pinned at its 160px minimum and
+// the code pane is genuinely squeezed. That is a real but unrepresentative
+// width -- nobody reviews 40-file cases in a 780px window. Worse, a layout that
+// only ever gets checked at one cramped width is a layout that has never been
+// checked where it is used.
+//
+// So: assert the real desktop geometry at 1600px, then resize down and re-assert
+// that nothing breaks or vanishes at the cramped width. Measured 2026-10-04:
+// the code block is 1022px at 1600 (the content pane is also 1022, i.e. it
+// fills), and still renders at 780.
+const DESKTOP = {width: 1600, height: 1000, deviceScaleFactor: 1, mobile: false}
+const CRAMPED = {width: 780, height: 493, deviceScaleFactor: 1, mobile: false}
+
+await cdp.send('Emulation.setDeviceMetricsOverride', DESKTOP)
+await sleep(2500)
+
 await sleep(5000)
 
 console.log('=== initial render ===')
@@ -250,6 +269,32 @@ if (!codeBox) errors.push('SOURCE: no <pre> rendered')
 else if (codeBox.w < 200)
   errors.push('SOURCE: code block collapsed (width=' + codeBox.w + ')')
 
+// The code must actually USE the pane at desktop width.
+//
+// This is the assertion that would have caught the single-child-horizontal-
+// Stack collapse: removing the Source-tab file list left one child, the Stack
+// shrank to content, and the block fell to 202px -- while the code still
+// rendered and every other check stayed green. A 200px floor is too low to see
+// it, so require the block to occupy most of its content pane.
+const layout = await evalJs(`(() => {
+  const block = document.querySelector('.astryx-code-block');
+  const pane = block && block.closest('.astryx-layout-content');
+  if (!block) return null;
+  const bw = Math.round(block.getBoundingClientRect().width);
+  const pw = pane ? Math.round(pane.getBoundingClientRect().width) : 0;
+  return {blockW: bw, paneW: pw, ratio: pw ? +(bw/pw).toFixed(2) : 0,
+          panels: [...document.querySelectorAll('.astryx-layout-content')]
+            .map(p => Math.round(p.getBoundingClientRect().width))};
+})()`)
+console.log('\n=== layout @1600 ===')
+console.log(layout)
+if (layout) {
+  if (layout.blockW < 600)
+    errors.push(`LAYOUT: code block only ${layout.blockW}px at 1600px viewport`)
+  if (layout.ratio < 0.9)
+    errors.push(`LAYOUT: code block fills only ${Math.round(layout.ratio*100)}% of its ${layout.paneW}px pane`)
+}
+
 // Unthemed Astryx silently loses every token; assert the theme actually loaded.
 // Count only the <link>ed stylesheets: React also injects one inline <style>
 // for the tokenizer, so document.styleSheets is 4, not 3.
@@ -294,6 +339,114 @@ console.log('\n=== transcript content ===')
 console.log(transcript)
 if (!gotAttempts || !transcript.hasAttempt)
   errors.push('TRANSCRIPT: no "Round N" header -- model answers are not rendered')
+
+// --- per-round ChatMessage -----------------------------------------------
+// One assistant bubble per round, so the reviewer can see where an attempt
+// ends. A single wrapping bubble ran all rounds together and the round
+// numbers lost their meaning.
+const rounds = await evalJs(`(() => {
+  const names = [...document.querySelectorAll('.astryx-chat-message__name, [class*="chat-message"] [class*="name"]')]
+    .map(n => (n.textContent||'').trim()).filter(Boolean);
+  return {
+    roundLabels: names.filter(n => /^Round \\d+$/.test(n)).length,
+    timeEls: document.querySelectorAll('time').length,
+  };
+})()`)
+console.log('per-round:', rounds)
+await sleep(800)
+const roundMsg = await evalJs(`(() => {
+  const t = document.body.innerText;
+  return {
+    roundN: (t.match(/Round \\d+/g)||[]).length,
+    timingCollapsed: (t.match(/Timing/g)||[]).length,
+  };
+})()`)
+console.log('transcript rounds:', roundMsg)
+if (!roundMsg.roundN) errors.push('TRANSCRIPT: no per-round labels after the split')
+
+// "Recorded" lives in the RUN INFO pane, not the transcript (checked the
+// source, not guessed). Was the raw ISO string printed verbatim.
+await clickText('Run info')
+await sleep(900)
+const stampsInfo = await evalJs(`document.querySelectorAll('time').length`)
+console.log('time elements @run info:', stampsInfo)
+if (!stampsInfo)
+  errors.push('TIMESTAMP: no <time> element in the Run info pane')
+await clickText('Transcript')
+await sleep(700)
+
+
+// --- next ungraded ------------------------------------------------------
+await clickText('Properties')
+await sleep(900)
+const nextLabel = await evalJs(
+  `[...document.querySelectorAll('button')]
+     .map(b => (b.innerText||'').trim())
+     .find(t => /^Next ungraded:|^All files graded$/.test(t)) || ''`,
+)
+console.log('next-ungraded button:', JSON.stringify(nextLabel))
+if (!nextLabel)
+  errors.push('NAV: no next-ungraded affordance in the inspector')
+
+// "Graded at" lives in the inspector. Also the raw ISO string before.
+const stampsProps = await evalJs(`(() => {
+  const t = [...document.querySelectorAll('time')];
+  return { n: t.length, txt: t.map(x => (x.textContent||'').trim()) };
+})()`)
+console.log('time elements @properties:', JSON.stringify(stampsProps))
+if (!stampsProps.n)
+  errors.push('TIMESTAMP: no <time> element in the inspector')
+
+// Narrow pass. Desktop is the primary layout; this only asserts that shrinking
+// the window does not BREAK anything. A 200px code block is legitimate here --
+// at 780px the inspector is pinned at its 160px minimum and the content pane is
+// genuinely small -- so the width floor is deliberately absent below.
+await cdp.send('Emulation.setDeviceMetricsOverride', CRAMPED)
+await sleep(1500)
+
+// Return to Source with a file selected first: the checks below look for the
+// code block, and the tab loop ended on Transcript, where there is none. A
+// "missing" code block here would be the probe's fault, not the app's.
+const narrowFile = await evalJs(
+  `(() => {const f = document.querySelector('[role="treeitem"][aria-level="2"]');
+    return f ? (f.textContent||'').trim().slice(0,40) : null})()`,
+)
+if (narrowFile) await clickText(narrowFile, true)
+await clickText('Source')
+await sleep(1500)
+
+const narrow = await evalJs(`(() => {
+  const gone = [];
+  // Every panel must still exist and stay non-zero at the cramped width.
+  for (const sel of ['.astryx-layout-panel', '.astryx-code-block']) {
+    const els = [...document.querySelectorAll(sel)];
+    if (!els.length) gone.push(sel + ':missing');
+    else els.forEach((e, i) => {
+      const w = Math.round(e.getBoundingClientRect().width);
+      if (w <= 0) gone.push(sel + '[' + i + ']:0px');
+    });
+  }
+  // Horizontal overflow is the classic narrow-window failure.
+  return {gone, overflowX: document.documentElement.scrollWidth - window.innerWidth};
+})()`)
+
+// Grading controls live in the inspector's Properties panel, so that panel has
+// to be the active tab -- checking while Source is showing reports a false
+// failure. (Verified they DO appear once Properties is selected.)
+await clickText('Properties')
+await sleep(1200)
+const gradeBtns = await evalJs(
+  `[...document.querySelectorAll('button')]
+     .filter(b => /^(Pass|Fail)$/.test((b.innerText||'').trim())).length`,
+)
+console.log('\n=== layout @780 ===')
+console.log({...narrow, gradeBtns})
+if (narrow.gone.length)
+  errors.push('NARROW: collapsed to zero width: ' + narrow.gone.join(', '))
+if (gradeBtns === 0)
+  errors.push('NARROW: Pass/Fail controls not reachable at 780px -- cannot grade')
+if (narrow.overflowX > 2)
+  errors.push(`NARROW: horizontal overflow of ${narrow.overflowX}px at 780px`)
 
 console.log('\n=== ERRORS ===')
 console.log(errors.length ? errors.join('\n') : '(none)')
