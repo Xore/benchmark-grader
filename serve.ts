@@ -11,7 +11,8 @@
 import {readdirSync, readFileSync, statSync} from 'node:fs'
 import {join} from 'node:path'
 import {mkdirSync, writeFileSync} from 'node:fs'
-import {renameSync, rmdirSync} from 'node:fs'
+import {renameSync, rmdirSync, rmSync} from 'node:fs'
+import {tmpdir} from 'node:os'
 
 const ROOT = '/home/xore/Desktop/benchmark-grader'
 const RUN_DIR = process.env.RUN_DIR ?? '/tmp/smoke-tr'
@@ -25,7 +26,9 @@ const RUBRIC =
 // at a scratch file instead of the real gradebook. It was hardcoded, which
 // meant every UI probe during the 16f3402 audit wrote into the real
 // grades.json; that only stayed clean because each probe restored a backup.
-const GRADES_FILE = process.env.GRADES_FILE ?? join(ROOT, 'grades.json')
+// `let`, not `const`: the self-test below temporarily repoints this at its own
+// temp file so the parse assertions do not depend on a real gradebook existing.
+let GRADES_FILE = process.env.GRADES_FILE ?? join(ROOT, 'grades.json')
 
 const MIME: Record<string, string> = {
   '.html': 'text/html; charset=utf-8',
@@ -459,49 +462,73 @@ if (process.argv.includes('--selftest')) {
   // Asserted here so neither can come back unnoticed.
   let regBad = 0
 
-  // 1. A corrupt grades.json must THROW, not degrade to {}.
-  {
-    const realParse = JSON.parse
-    const threw = (() => {
-      try {
-        JSON.parse = (() => {
-          throw new SyntaxError('Unexpected EOF')
-        }) as typeof JSON.parse
-        try {
-          readGrades()
-          return false
-        } catch {
-          return true
-        }
-      } finally {
-        JSON.parse = realParse
-      }
-    })()
-    if (!threw) {
-      console.error('FAIL corrupt grades.json: readGrades returned instead of throwing')
-      regBad++
-    }
-  }
-
-  // 2. A valid file must still read back normally.
-  {
-    const realParse = JSON.parse
+  // Both cases stub JSON.parse, so they only exercise the parse branch when
+    // the file is actually readable. On a clean checkout grades.json is untracked
+    // and absent: safeRead returns null, readGrades returns {} before ever
+    // calling the stub, and both assertions fail on a machine with nothing to
+    // grade. That is how verify:selftest passed locally for weeks and then
+    // failed in CI on its first run without a gradebook.
+    //
+    // So the test writes its own file. The readable file is the precondition the
+    // assertions always meant to assume; creating it is cheaper than branching
+    // them on whether a human happens to have grades to lose.
+    const selfTestGrades = join(tmpdir(), `grades-selftest-${process.pid}.json`)
+    const realGradesFile = GRADES_FILE
+    GRADES_FILE = selfTestGrades
     try {
-      JSON.parse = (() => ({ 'run-a': { files: {} } })) as typeof JSON.parse
-      let ok = false
-      try {
-        ok = 'run-a' in readGrades()
-      } catch {
-        ok = false
+      writeFileSync(selfTestGrades, '{ "run-a": { "files": {} } }')
+
+      // 1. A corrupt grades.json must THROW, not degrade to {}.
+      {
+        const realParse = JSON.parse
+        const threw = (() => {
+          try {
+            JSON.parse = (() => {
+              throw new SyntaxError('Unexpected EOF')
+            }) as typeof JSON.parse
+            try {
+              readGrades()
+              return false
+            } catch {
+              return true
+            }
+          } finally {
+            JSON.parse = realParse
+          }
+        })()
+        if (!threw) {
+          console.error('FAIL corrupt grades.json: readGrades returned instead of throwing')
+          regBad++
+        }
       }
-      if (!ok) {
-        console.error('FAIL valid grades.json: readGrades did not return the parsed object')
-        regBad++
+
+      // 2. A valid file must still read back normally.
+      {
+        const realParse = JSON.parse
+        try {
+          JSON.parse = (() => ({ 'run-a': { files: {} } })) as typeof JSON.parse
+          let ok = false
+          try {
+            ok = 'run-a' in readGrades()
+          } catch {
+            ok = false
+          }
+          if (!ok) {
+            console.error('FAIL valid grades.json: readGrades did not return the parsed object')
+            regBad++
+          }
+        } finally {
+          JSON.parse = realParse
+        }
       }
     } finally {
-      JSON.parse = realParse
+      GRADES_FILE = realGradesFile
+      try {
+        rmSync(selfTestGrades, {force: true})
+      } catch {
+        /* best effort */
+      }
     }
-  }
 
   // 3. The staleness guard must drop a response for a run you have left.
   {
