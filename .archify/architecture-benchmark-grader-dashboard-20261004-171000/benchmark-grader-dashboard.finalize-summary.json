@@ -1,0 +1,305 @@
+{
+  "schemaVersion": 1,
+  "ok": true,
+  "command": "finalize",
+  "status": "pass",
+  "type": "architecture",
+  "quality": "showcase",
+  "specification": {
+    "path": "/home/xore/Desktop/benchmark-grader/.archify/architecture-benchmark-grader-dashboard-20261004-171000/candidate.json",
+    "sha256": "998cf7f2abc82efbf6a9f5d99dde45ae91d62372e5231245ec8577ad5e34b8c3",
+    "bytes": 5762
+  },
+  "artifact": {
+    "path": "/home/xore/Desktop/benchmark-grader/.archify/architecture-benchmark-grader-dashboard-20261004-171000/benchmark-grader-dashboard.html",
+    "sha256": "31a324f2be1b3e1e2295c3f2740ff4e07c4457c8c66e1be5b290dcf75be720da",
+    "bytes": 768097
+  },
+  "gates": {
+    "validate": "pass",
+    "deliver": "pass",
+    "check": "pass",
+    "browser-check": "pass"
+  },
+  "diagnostics": [],
+  "diagnosticSummary": {
+    "total": 0,
+    "shown": 0,
+    "truncated": false
+  },
+  "evidence": {
+    "receipt": "/home/xore/Desktop/benchmark-grader/.archify/architecture-benchmark-grader-dashboard-20261004-171000/benchmark-grader-dashboard.finalize.json",
+    "summaryReceipt": "/home/xore/Desktop/benchmark-grader/.archify/architecture-benchmark-grader-dashboard-20261004-171000/benchmark-grader-dashboard.finalize-summary.json",
+    "browserCheckReceipt": "/home/xore/Desktop/benchmark-grader/.archify/architecture-benchmark-grader-dashboard-20261004-171000/benchmark-grader-dashboard.browser-check.json"
+  },
+  "visualReview": "not-requested",
+  "durationMs": 3179,
+  "visualReviewRecommendation": {
+    "action": "inspect-route-readability",
+    "signals": {
+      "resolvedCrossovers": 7,
+      "routesOverSuggestedBends": 6
+    },
+    "reason": "Automated gates passed, but crossings or detours still need perceptual review before claiming visual quality.",
+    "affectedRoutes": {
+      "crossings": [
+        {
+          "left": {
+            "from": "startpanel",
+            "to": "tabs",
+            "label": "selection",
+            "collectionIndex": 2,
+            "artifactIndex": 3
+          },
+          "right": {
+            "from": "tabs",
+            "to": "endpanel",
+            "label": "artifact",
+            "collectionIndex": 3,
+            "artifactIndex": 4
+          },
+          "point": [
+            760,
+            419
+          ],
+          "sharedNode": "tabs"
+        },
+        {
+          "left": {
+            "from": "startpanel",
+            "to": "tabs",
+            "label": "selection",
+            "collectionIndex": 2,
+            "artifactIndex": 3
+          },
+          "right": {
+            "from": "shell",
+            "to": "core",
+            "label": "Astryx only",
+            "collectionIndex": 5,
+            "artifactIndex": 6
+          },
+          "point": [
+            636,
+            448
+          ]
+        },
+        {
+          "left": {
+            "from": "startpanel",
+            "to": "tabs",
+            "label": "selection",
+            "collectionIndex": 2,
+            "artifactIndex": 3
+          },
+          "right": {
+            "from": "shell",
+            "to": "server",
+            "label": "GET run",
+            "collectionIndex": 8,
+            "artifactIndex": 9
+          },
+          "point": [
+            760,
+            410
+          ]
+        },
+        {
+          "left": {
+            "from": "tabs",
+            "to": "endpanel",
+            "label": "artifact",
+            "collectionIndex": 3,
+            "artifactIndex": 4
+          },
+          "right": {
+            "from": "shell",
+            "to": "core",
+            "label": "Astryx only",
+            "collectionIndex": 5,
+            "artifactIndex": 6
+          },
+          "point": [
+            636,
+            419
+          ]
+        },
+        {
+          "left": {
+            "from": "tabs",
+            "to": "endpanel",
+            "label": "artifact",
+            "collectionIndex": 3,
+            "artifactIndex": 4
+          },
+          "right": {
+            "from": "shell",
+            "to": "server",
+            "label": "GET run",
+            "collectionIndex": 8,
+            "artifactIndex": 9
+          },
+          "point": [
+            967,
+            419
+          ]
+        },
+        {
+          "left": {
+            "from": "shell",
+            "to": "core",
+            "label": "Astryx only",
+            "collectionIndex": 5,
+            "artifactIndex": 6
+          },
+          "right": {
+            "from": "shell",
+            "to": "server",
+            "label": "GET run",
+            "collectionIndex": 8,
+            "artifactIndex": 9
+          },
+          "point": [
+            636,
+            410
+          ],
+          "sharedNode": "shell"
+        },
+        {
+          "left": {
+            "from": "shiki",
+            "to": "tabs",
+            "label": "tokenises",
+            "collectionIndex": 7,
+            "artifactIndex": 8
+          },
+          "right": {
+            "from": "shell",
+            "to": "server",
+            "label": "GET run",
+            "collectionIndex": 8,
+            "artifactIndex": 9
+          },
+          "point": [
+            967,
+            512
+          ]
+        }
+      ],
+      "detours": [
+        {
+          "relationship": {
+            "from": "shell",
+            "to": "startpanel",
+            "label": "pick case/file",
+            "collectionIndex": 1,
+            "artifactIndex": 2
+          },
+          "bends": 3,
+          "stretch": 1.183
+        },
+        {
+          "relationship": {
+            "from": "startpanel",
+            "to": "tabs",
+            "label": "selection",
+            "collectionIndex": 2,
+            "artifactIndex": 3
+          },
+          "bends": 3,
+          "stretch": 1
+        },
+        {
+          "relationship": {
+            "from": "tabs",
+            "to": "rundata",
+            "label": "reads",
+            "collectionIndex": 4,
+            "artifactIndex": 5
+          },
+          "bends": 3,
+          "stretch": 1
+        },
+        {
+          "relationship": {
+            "from": "shiki",
+            "to": "tabs",
+            "label": "tokenises",
+            "collectionIndex": 7,
+            "artifactIndex": 8
+          },
+          "bends": 4,
+          "stretch": 1.152,
+          "directCorridorBlockers": [
+            {
+              "id": "theme",
+              "label": "Editable theme",
+              "box": [
+                350,
+                452,
+                200,
+                120
+              ]
+            },
+            {
+              "id": "core",
+              "label": "@astryxdesign/core",
+              "box": [
+                660,
+                452,
+                200,
+                120
+              ]
+            }
+          ]
+        },
+        {
+          "relationship": {
+            "from": "shell",
+            "to": "server",
+            "label": "GET run",
+            "collectionIndex": 8,
+            "artifactIndex": 9
+          },
+          "bends": 4,
+          "stretch": 1
+        },
+        {
+          "relationship": {
+            "from": "endpanel",
+            "to": "server",
+            "label": "PUT grades",
+            "collectionIndex": 10,
+            "artifactIndex": 11
+          },
+          "bends": 3,
+          "stretch": 1.117,
+          "directCorridorBlockers": [
+            {
+              "id": "shiki",
+              "label": "Shiki highlighter",
+              "box": [
+                970,
+                452,
+                200,
+                120
+              ]
+            }
+          ]
+        }
+      ],
+      "truncated": false
+    },
+    "hints": [
+      "startpanel → tabs and tabs → endpanel cross next to tabs: move node startpanel or endpanel so the two reach tabs from different sides (for example one level with it, one directly above or below it).",
+      "startpanel → tabs crosses shell → core: move the node of whichever is a branch, return, or second entrance to the other side of the main path, so that relationship runs through an empty corridor.",
+      "startpanel → tabs crosses shell → server: move the node of whichever is a branch, return, or second entrance to the other side of the main path, so that relationship runs through an empty corridor.",
+      "tabs → endpanel crosses shell → core: move the node of whichever is a branch, return, or second entrance to the other side of the main path, so that relationship runs through an empty corridor.",
+      "tabs → endpanel crosses shell → server: move the node of whichever is a branch, return, or second entrance to the other side of the main path, so that relationship runs through an empty corridor.",
+      "shell → core and shell → server cross next to shell: move node core or server so the two reach shell from different sides (for example one level with it, one directly above or below it).",
+      "shiki → tabs crosses shell → server: move the node of whichever is a branch, return, or second entrance to the other side of the main path, so that relationship runs through an empty corridor.",
+      "shell → startpanel needs 3 bends: move node shell or startpanel so they share a row or column with matching centers, or sit diagonally with a clear corner."
+    ],
+    "repair": "Trace these relationships at the desktop viewport. For Architecture, use references/architecture-layout-repair.md: reflow a blocked main path or tangled connected scene, and repair an isolated defect locally only when the surrounding composition is accepted. Preserve all semantic content and user-fixed geometry. Rerun finalize once after the edit."
+  }
+}

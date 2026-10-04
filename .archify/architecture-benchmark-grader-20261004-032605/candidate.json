@@ -1,0 +1,416 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "Benchmark Grader \u2014 Read-Only Run Inspector",
+    "subtitle": "Bun API server over frozen benchmark transcripts, feeding a client-rendered Astryx SPA",
+    "output": ".archify/architecture-benchmark-grader-20261004-032605/benchmark-grader.html",
+    "quality_profile": "showcase",
+    "animation": "none",
+    "repository": {
+      "url": "https://github.com/Xore/benchmark-grader.git",
+      "provider": "github",
+      "revision": "9182e518db226dfef4ba34300fca63fb59494fb1",
+      "link_mode": "web"
+    }
+  },
+  "components": [
+    {
+      "id": "grader",
+      "type": "external",
+      "label": "Grader",
+      "sublabel": "operator / human reviewer",
+      "pos": [
+        40,
+        300
+      ],
+      "size": [
+        130,
+        60
+      ],
+      "sources": [
+        {
+          "path": "src/app.tsx",
+          "line": 296,
+          "label": "App root"
+        }
+      ]
+    },
+    {
+      "id": "server",
+      "type": "backend",
+      "label": "Bun API Server",
+      "sublabel": "server.ts :3020",
+      "tag": "build + serve in one process",
+      "pos": [
+        250,
+        290
+      ],
+      "size": [
+        150,
+        70
+      ],
+      "sources": [
+        {
+          "path": "server.ts",
+          "line": 71,
+          "label": "serve({fetch})"
+        }
+      ]
+    },
+    {
+      "id": "client",
+      "type": "frontend",
+      "label": "Astryx SPA",
+      "sublabel": "src/app.tsx (749 lines)",
+      "pos": [
+        250,
+        470
+      ],
+      "size": [
+        150,
+        66
+      ],
+      "sources": [
+        {
+          "path": "src/app.tsx",
+          "line": 296,
+          "label": "App()"
+        }
+      ]
+    },
+    {
+      "id": "transcripts",
+      "type": "database",
+      "label": "transcripts.jsonl",
+      "sublabel": "RUN_DIR/transcripts/<run>/",
+      "pos": [
+        580,
+        120
+      ],
+      "size": [
+        150,
+        62
+      ],
+      "sources": [
+        {
+          "path": "server.ts",
+          "line": 30,
+          "label": "Bun.Glob scan"
+        }
+      ]
+    },
+    {
+      "id": "artifacts",
+      "type": "database",
+      "label": "coder-artifacts/",
+      "sublabel": "model-written files",
+      "pos": [
+        580,
+        290
+      ],
+      "size": [
+        150,
+        62
+      ],
+      "sources": [
+        {
+          "path": "server.ts",
+          "line": 130,
+          "label": "artifact root"
+        }
+      ]
+    },
+    {
+      "id": "grades",
+      "type": "database",
+      "label": "grades/<run>.json",
+      "sublabel": "only writable state",
+      "pos": [
+        580,
+        620
+      ],
+      "size": [
+        150,
+        62
+      ],
+      "sources": [
+        {
+          "path": "server.ts",
+          "line": 172,
+          "label": "POST grades"
+        }
+      ]
+    },
+    {
+      "id": "corpus",
+      "type": "database",
+      "label": "coder_cases_v1_rubric",
+      "sublabel": "frozen rubric \u2014 absolute path",
+      "pos": [
+        580,
+        730
+      ],
+      "size": [
+        210,
+        62
+      ],
+      "sources": [
+        {
+          "path": "server.ts",
+          "line": 61,
+          "label": "loaded once at boot"
+        }
+      ]
+    },
+    {
+      "id": "chunker",
+      "type": "frontend",
+      "label": "answer-chunks.ts",
+      "sublabel": "deterministic prose/code split",
+      "pos": [
+        830,
+        440
+      ],
+      "size": [
+        150,
+        62
+      ],
+      "sources": [
+        {
+          "path": "src/answer-chunks.ts",
+          "line": 78,
+          "label": "chunkAnswer()"
+        }
+      ]
+    },
+    {
+      "id": "shiki",
+      "type": "frontend",
+      "label": "shiki-tokenizer.ts",
+      "sublabel": "TextMate scopes \u2192 Astryx tokens",
+      "pos": [
+        830,
+        580
+      ],
+      "size": [
+        150,
+        62
+      ],
+      "sources": [
+        {
+          "path": "src/shiki-tokenizer.ts",
+          "line": 25,
+          "label": "6 grammars gated"
+        }
+      ]
+    },
+    {
+      "id": "runner",
+      "type": "external",
+      "label": "APIARY roster runner",
+      "sublabel": "upstream, writes transcripts",
+      "pos": [
+        830,
+        270
+      ],
+      "size": [
+        150,
+        62
+      ],
+      "sources": [
+        {
+          "path": "server.ts",
+          "line": 5,
+          "label": "RUN_DIR contract"
+        }
+      ]
+    },
+    {
+      "id": "verify",
+      "type": "external",
+      "label": "verify.ts",
+      "sublabel": "headless Chrome CDP smoke test",
+      "pos": [
+        250,
+        760
+      ],
+      "size": [
+        150,
+        62
+      ],
+      "sources": [
+        {
+          "path": "verify.ts",
+          "line": 1,
+          "label": "e2e check"
+        }
+      ]
+    }
+  ],
+  "boundaries": [
+    {
+      "kind": "region",
+      "label": "benchmark-grader process \u2014 Bun runtime, single port, no DB",
+      "wraps": [
+        "server",
+        "client",
+        "chunker",
+        "shiki",
+        "verify"
+      ],
+      "pad": 26
+    },
+    {
+      "kind": "region",
+      "label": "Read-only evidence on disk (RUN_DIR, default /tmp/roster-run)",
+      "wraps": [
+        "transcripts",
+        "artifacts",
+        "corpus"
+      ],
+      "pad": 20
+    }
+  ],
+  "connections": [
+    {
+      "id": "grader-server",
+      "from": "grader",
+      "to": "server",
+      "label": "HTTP :3020",
+      "fromSide": "right",
+      "toSide": "left"
+    },
+    {
+      "id": "server-boot-build",
+      "from": "server",
+      "to": "client",
+      "label": "Bun.build at boot \u2192 /app.js",
+      "variant": "emphasis",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "id": "server-runs",
+      "from": "server",
+      "to": "transcripts",
+      "label": "GET /api/runs, /api/run/:id",
+      "fromSide": "top",
+      "toSide": "right"
+    },
+    {
+      "id": "server-artifacts",
+      "from": "server",
+      "to": "artifacts",
+      "label": "glob + path-traversal guard",
+      "fromSide": "right",
+      "toSide": "left"
+    },
+    {
+      "id": "server-grades",
+      "from": "server",
+      "to": "grades",
+      "label": "GET / POST"
+    },
+    {
+      "id": "server-corpus",
+      "from": "server",
+      "to": "corpus",
+      "label": "in-memory, no route",
+      "variant": "dashed"
+    },
+    {
+      "id": "client-server",
+      "from": "client",
+      "to": "server",
+      "label": "fetch /api/* on state change",
+      "variant": "emphasis",
+      "fromSide": "left",
+      "toSide": "bottom"
+    },
+    {
+      "id": "client-chunker",
+      "from": "client",
+      "to": "chunker",
+      "label": "chunkAnswer(turn.answer)",
+      "fromSide": "right",
+      "toSide": "left"
+    },
+    {
+      "id": "client-shiki",
+      "from": "client",
+      "to": "shiki",
+      "label": "tokenizer prop",
+      "fromSide": "bottom",
+      "toSide": "left"
+    },
+    {
+      "id": "chunker-shiki",
+      "from": "chunker",
+      "to": "shiki",
+      "label": "code chunks only",
+      "variant": "dashed",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "id": "runner-transcripts",
+      "from": "runner",
+      "to": "transcripts",
+      "label": "writes JSONL out-of-band",
+      "variant": "dashed",
+      "fromSide": "top",
+      "toSide": "bottom"
+    },
+    {
+      "id": "verify-server",
+      "from": "verify",
+      "to": "server",
+      "label": "drives the live SPA",
+      "variant": "dashed",
+      "fromSide": "right",
+      "toSide": "bottom"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "Read path (the whole app)",
+      "items": [
+        "GET /api/runs globs RUN_DIR/transcripts/*/transcripts.jsonl, keeps only workflow=coder_generation lines.",
+        "GET /api/corpus is a constant: the rubric JSON is read once at module load, not per request.",
+        "Client holds all navigation state (runId, selCase, selFile, tab) and refetches on each change via three useEffects.",
+        "Runs are grouped by model tag client-side: ~167 attempts collapse to a handful of Selector entries."
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "Only mutation in the system",
+      "items": [
+        "POST /api/grades/:runId overwrites the whole GradeMap \u2014 last writer wins, no merge, no locking.",
+        "Grades are keyed case:<id> and file:<path>; the frozen rubric is never mutated.",
+        "The client optimistically updates local state, so a failed POST silently diverges on reload."
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "Structural issues worth noting",
+      "items": [
+        "Every request re-reads and re-parses full JSONL transcripts; runs() globs the directory on each call \u2014 O(runs x lines) per page view.",
+        "corpus path is an absolute hard-coded path into /home/xore/Github/APIARY/... \u2014 the server cannot start anywhere else.",
+        "No route table: fetch() is a linear if/return chain, so every endpoint re-runs the preceding regex matches.",
+        "The Astryx CSS route whitelists /node_modules paths through the exports map; safe today, but it is a hand-rolled static server.",
+        "verify.ts is an unrunnable-by-default e2e: it needs the server already listening on :3020 and a Chrome with a debug port."
+      ]
+    },
+    {
+      "dot": "violet",
+      "title": "Deliberate simplifications already flagged",
+      "items": [
+        "shiki: 6 grammars gated to corpus languages (~200 KB each) \u2014 add an entry when the benchmark emits a new language.",
+        "answer-chunks: heuristic codeScore() split, not a parser; buckets mixing C/Python/shell highlight approximately.",
+        "langOf(): prefix heuristics default to rust \u2014 documented ponytail: ceiling noted inline in app.tsx."
+      ]
+    }
+  ]
+}
