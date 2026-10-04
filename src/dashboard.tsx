@@ -626,7 +626,10 @@ export default function ResizableWorkspacePage() {
                 width={240}
                 value={caseId}
                 placeholder="Select a case"
-                options={cases.map(c => ({
+                // visibleCases, not cases: fileFilter hides cases with no
+                // matching file, so offering every case here let a reviewer
+                // search down to one and still be handed the other 39.
+                options={visibleCases.map(c => ({
                   value: c.id,
                   label: c.id,
                   description: `${c.artifacts.length} files`,
@@ -669,53 +672,17 @@ export default function ResizableWorkspacePage() {
                         direction="vertical"
                         style={styles.fileExplorer}
                         gap={2}>
-                        <Selector
-                          label="Select run"
-                          size="sm"
-                          value={runId}
-                          placeholder="Select a run"
-                          options={Object.entries(
-                            runsForModel.reduce<Record<string, typeof runsForModel>>(
-                              (acc, r) => {
-                                (acc[r.model] ??= []).push(r);
-                                return acc;
-                              },
-                              {},
-                            ),
-                          ).map(([model, rs]) => ({
-                            type: 'section' as const,
-                            key: model,
-                            title: `${model} (${rs.length})`,
-                            options: rs.map(r => ({
-                              value: r.id,
-                              label: r.id,
-                              description: `${r.records} records`,
-                            })),
-                          }))}
-                          onChange={setRunId}
-                        />
-                        <Selector
-                          label="Select case"
-                          size="sm"
-                          value={caseId}
-                          placeholder="Select a case"
-                          // visibleCases, not cases: fileFilter already hides
-                          // cases with no matching file, so offering the hidden
-                          // ones here let a reviewer search down to one case and
-                          // still be handed the other 39 in the dropdown. The
-                          // top-nav Selector already used visibleCases -- two
-                          // controls over the same state disagreed.
-                          options={visibleCases.map(c => ({
-                            value: c.id,
-                            label: c.id,
-                            description: `${c.artifacts.length} files`,
-                          }))}
-                          onChange={setCaseId}
-                        />
-                        <ProgressBar
-                          label={`${gradedFiles} of ${totalFiles} files graded`}
-                          value={totalFiles ? gradedFiles / totalFiles : 0}
-                        />
+                        {/* P2-6: the sidebar used to repeat the top nav's
+                            run selector, case selector and progress bar over
+                            the same state, with a DIFFERENT summary string
+                            ("N records" here vs "N records . M cases" up
+                            there) and no model grouping on one of them. Two
+                            edit points for one value, disagreeing on how to
+                            describe it -- the classic way a reviewer ends up
+                            convinced they are in a different run than the one
+                            on screen. Navigation belongs to the top nav; this
+                            panel's job is search and the tree. */}
+
                         <TextInput
                           label="Search files"
                           isLabelHidden
@@ -1031,27 +998,19 @@ export default function ResizableWorkspacePage() {
                             </Stack>
                           )}
                           {viewTab === 'source' && (
-                          <Stack direction="horizontal" height="fill">
-                            <Stack width={200} padding={2} gap={1}>
-                              <Text>Files in this case</Text>
-                              {curCase?.artifacts.map(a => (
-                                <ListItem
-                                  key={a.path}
-                                  label={a.path.split('/').pop() ?? a.path}
-                                  description={a.lang}
-                                  startContent={
-                                    <Icon icon={DocumentTextIcon} size="xsm" />
-                                  }
-                                  isSelected={picked?.a.path === a.path}
-                                  onClick={() => {
-                                    setPicked({c: curCase, a});
-                                    setNote(
-                                      grades[`${curCase.id}:${a.path}`]?.note ?? '',
-                                    );
-                                  }}
-                                />
-                              ))}
-                            </Stack>
+                          // P1-4: this used to hold a 200px file list beside
+                          // the code. Two things had to change together:
+                          //  - the list is gone (the tree already lists files
+                          //    WITH grade marks; that one showed none), and
+                          //  - the horizontal Stack went with it, because a
+                          //    single-child horizontal Stack collapses to its
+                          //    content. Left in place it would have SHRUNK the
+                          //    viewer to ~200px rather than widening it.
+                          // The vertical Stack is what the other tabs use and
+                          // is what gives ContextMenu a full-width parent to
+                          // resolve CodeBlock's width="100%" against -- without
+                          // it the block measures 202px, its longest line.
+                          <Stack direction="vertical" width="fill" gap={1}>
                           <ContextMenu
                             label="File actions"
                             items={
