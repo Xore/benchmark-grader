@@ -23,7 +23,12 @@ the dashboard writes the other.**
 
 ### `RUN_DIR` — read-only, owned by the benchmark runner
 
-Default `/tmp/smoke-tr`. Override with `RUN_DIR=/path/to/runs bun run serve`.
+No default. `RUN_DIR=/path/to/runs bun run serve` overrides; with it unset the
+server discovers the newest dir whose children hold `transcripts.jsonl`
+(`/tmp/roster-run/transcripts`, else a `~/benchmark-run-backup-*` archive) and
+**exits 1** if it finds none. It never falls back to the `/tmp/smoke-tr`
+fixture — that served one fabricated run at HTTP 200, indistinguishable from
+the real benchmark.
 
 ```
 $RUN_DIR/<runId>/
@@ -100,7 +105,7 @@ host with `UI_HOST=` if `192.168.42.253` is not this machine's LAN address.
 | Variable | Default                                          |
 |----------|--------------------------------------------------|
 | `PORT`   | `3020`                                           |
-| `RUN_DIR`| `/tmp/smoke-tr`                                  |
+| `RUN_DIR`| discovered (newest dir containing `transcripts.jsonl`) |
 | `RUBRIC` | APIARY `coder_cases_v1_rubric.json` in-repo path |
 
 ## Honesty rules baked in

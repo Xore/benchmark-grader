@@ -1,21 +1,20 @@
 // Grader dashboard service. New file: the old server.ts is untouched.
 //
 //   bun run serve            # 0.0.0.0:3020
-//   RUN_DIR=/tmp/smoke-tr bun run serve
+//   RUN_DIR=/tmp/roster-run/transcripts bun run serve
 //
 // Reads benchmark run directories (transcripts.jsonl + coder-artifacts/) and
 // serves them as JSON to the Astryx client. Grades are dashboard-owned and
 // written to a separate file so the runner's own human-grades.json is never
 // overwritten.
 
-import {readdirSync, readFileSync, statSync} from 'node:fs'
+import {existsSync, readdirSync, readFileSync, statSync} from 'node:fs'
 import {join} from 'node:path'
 import {mkdirSync, writeFileSync} from 'node:fs'
 import {renameSync, rmdirSync, rmSync} from 'node:fs'
 import {tmpdir} from 'node:os'
 
 const ROOT = '/home/xore/Desktop/benchmark-grader'
-const RUN_DIR = process.env.RUN_DIR ?? '/tmp/smoke-tr'
 const PORT = Number(process.env.PORT ?? 3020)
 const RUBRIC =
   process.env.RUBRIC ??
@@ -29,6 +28,65 @@ const RUBRIC =
 // `let`, not `const`: the self-test below temporarily repoints this at its own
 // temp file so the parse assertions do not depend on a real gradebook existing.
 let GRADES_FILE = process.env.GRADES_FILE ?? join(ROOT, 'grades.json')
+
+// Which run parent dir to serve, in priority order:
+//   1. $RUN_DIR           -- explicit, and what probes/tests set
+//   2. the newest candidate parent dir whose children hold transcripts.jsonl
+// There is no default any more. The old default was /tmp/smoke-tr, a smoke
+// fixture, so a bare `bun run serve` booted on port 3020 and served one
+// fabricated run -- indistinguishable, from the browser, from serving the
+// real benchmark. And on 2026-10-05 a 3020 process started the previous
+// evening with RUN_DIR pinned to an ARCHIVE served four obsolete runs while
+// the live runner wrote to /tmp/roster-run/transcripts. Discovery is the only
+// durable answer: the runner's output dir is hardcoded in roster_run.py,
+// outside this repo, with no env override it honours.
+function hasTranscripts(dir: string): boolean {
+  try {
+    return readdirSync(dir, {withFileTypes: true}).some(
+      e => e.isDirectory() && existsSync(join(dir, e.name, 'transcripts.jsonl')),
+    )
+  } catch {
+    return false
+  }
+}
+
+function resolveRunDir(): string {
+  const env = process.env.RUN_DIR
+  if (env) return env
+  const candidates = ['/tmp/roster-run/transcripts']
+  try {
+    for (const e of readdirSync('/home/xore', {withFileTypes: true})) {
+      if (e.isDirectory() && e.name.startsWith('benchmark-run-backup-')) {
+        candidates.push(join('/home/xore', e.name))
+      }
+    }
+  } catch {
+    /* /home/xore unreadable: keep the hardcoded candidates */
+  }
+  const found = candidates.filter(existsSync).filter(hasTranscripts)
+  if (found.length) {
+    // Newest wins: an archive backup must never outrank the live run just
+    // because it was listed first.
+    return found
+      .map(d => ({d, m: statSync(d).mtimeMs}))
+      .sort((x, y) => y.m - x.m)[0].d
+  }
+  return '/tmp/roster-run/transcripts'
+}
+
+// Fail loud rather than serve an empty run list: HTTP 200 with zero runs reads
+// as "nothing graded yet" and hides the misconfiguration entirely.
+const RUN_DIR = resolveRunDir()
+if (!process.argv.includes('--selftest')) {
+  if (!existsSync(RUN_DIR)) {
+    console.error(`RUN_DIR does not exist: ${RUN_DIR}`)
+    process.exit(1)
+  }
+  if (!hasTranscripts(RUN_DIR)) {
+    console.error(`RUN_DIR has no run dirs containing transcripts.jsonl: ${RUN_DIR}`)
+    process.exit(1)
+  }
+}
 
 const MIME: Record<string, string> = {
   '.html': 'text/html; charset=utf-8',
@@ -575,6 +633,56 @@ if (process.argv.includes('--selftest')) {
     if (applied !== 1) {
       console.error(`FAIL staleness guard: applied=${applied} want=1 (a stale run response was not dropped)`)
       regBad++
+    }
+  }
+
+  // 4. RUN_DIR resolution must honour $RUN_DIR, and discovery must never
+  //    return the /tmp/smoke-tr fixture. A bare `bun run serve` used to serve
+  //    that one fabricated run at HTTP 200.
+  //    Hermetic: CI has no /tmp/roster-run, so the "is a real run dir"
+  //    assertion only applies when discovery actually found something.
+  {
+    const realEnv = process.env.RUN_DIR
+    try {
+      process.env.RUN_DIR = '/tmp/smoke-tr/runs'
+      if (resolveRunDir() !== '/tmp/smoke-tr/runs') {
+        console.error(`FAIL resolveRunDir: ignored $RUN_DIR -> ${resolveRunDir()}`)
+        regBad++
+      }
+      delete process.env.RUN_DIR
+      const discovered = resolveRunDir()
+      if (discovered === '/tmp/smoke-tr' || discovered === '/tmp/smoke-tr/runs') {
+        console.error(`FAIL resolveRunDir: discovery returned the smoke fixture (${discovered})`)
+        regBad++
+      }
+      if (existsSync(discovered) && !hasTranscripts(discovered)) {
+        console.error(`FAIL resolveRunDir: discovered ${discovered} has no transcripts.jsonl`)
+        regBad++
+      }
+      // hasTranscripts is the predicate discovery filters on: prove it
+      // accepts a real run dir and rejects a parent with none, using a
+      // throwaway tree instead of whatever this machine happens to have.
+      const fx = join(tmpdir(), `rundir-selftest-${process.pid}`)
+      const good = join(fx, 'run-a')
+      try {
+        mkdirSync(good, {recursive: true})
+        writeFileSync(join(good, 'transcripts.jsonl'), '')
+        if (!hasTranscripts(fx)) {
+          console.error('FAIL hasTranscripts: false on a dir with a run/transcripts.jsonl')
+          regBad++
+        }
+        const empty = join(fx, 'empty')
+        mkdirSync(empty, {recursive: true})
+        if (hasTranscripts(empty)) {
+          console.error('FAIL hasTranscripts: true on a dir with no transcripts.jsonl')
+          regBad++
+        }
+      } finally {
+        rmSync(fx, {recursive: true, force: true})
+      }
+    } finally {
+      if (realEnv === undefined) delete process.env.RUN_DIR
+      else process.env.RUN_DIR = realEnv
     }
   }
 
