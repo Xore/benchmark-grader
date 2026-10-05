@@ -636,9 +636,11 @@ if (process.argv.includes('--selftest')) {
     }
   }
 
-  // 4. RUN_DIR resolution must honour $RUN_DIR, and discovery must not fall
-  //    back to the /tmp/smoke-tr fixture. A bare `bun run serve` used to serve
+  // 4. RUN_DIR resolution must honour $RUN_DIR, and discovery must never
+  //    return the /tmp/smoke-tr fixture. A bare `bun run serve` used to serve
   //    that one fabricated run at HTTP 200.
+  //    Hermetic: CI has no /tmp/roster-run, so the "is a real run dir"
+  //    assertion only applies when discovery actually found something.
   {
     const realEnv = process.env.RUN_DIR
     try {
@@ -653,9 +655,30 @@ if (process.argv.includes('--selftest')) {
         console.error(`FAIL resolveRunDir: discovery returned the smoke fixture (${discovered})`)
         regBad++
       }
-      if (!existsSync(discovered) || !hasTranscripts(discovered)) {
+      if (existsSync(discovered) && !hasTranscripts(discovered)) {
         console.error(`FAIL resolveRunDir: discovered ${discovered} has no transcripts.jsonl`)
         regBad++
+      }
+      // hasTranscripts is the predicate discovery filters on: prove it
+      // accepts a real run dir and rejects a parent with none, using a
+      // throwaway tree instead of whatever this machine happens to have.
+      const fx = join(tmpdir(), `rundir-selftest-${process.pid}`)
+      const good = join(fx, 'run-a')
+      try {
+        mkdirSync(good, {recursive: true})
+        writeFileSync(join(good, 'transcripts.jsonl'), '')
+        if (!hasTranscripts(fx)) {
+          console.error('FAIL hasTranscripts: false on a dir with a run/transcripts.jsonl')
+          regBad++
+        }
+        const empty = join(fx, 'empty')
+        mkdirSync(empty, {recursive: true})
+        if (hasTranscripts(empty)) {
+          console.error('FAIL hasTranscripts: true on a dir with no transcripts.jsonl')
+          regBad++
+        }
+      } finally {
+        rmSync(fx, {recursive: true, force: true})
       }
     } finally {
       if (realEnv === undefined) delete process.env.RUN_DIR
