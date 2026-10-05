@@ -77,6 +77,19 @@ function safeRead(path: string): string | null {
   }
 }
 
+// The runner stamps every run dir with a run.json. Absent on older runs, which
+// is why this returns null instead of throwing: the dashboard must still open
+// a run written by a runner that predates the file.
+function readRunMeta(dir: string): unknown {
+  const raw = safeRead(join(dir, 'run.json'))
+  if (raw === null) return null
+  try {
+    return JSON.parse(raw)
+  } catch {
+    return null
+  }
+}
+
 function walk(dir: string, root = dir): string[] {
   let out: string[] = []
   let entries: string[]
@@ -308,6 +321,22 @@ function loadRun(runId: string): unknown | null {
     records: records.length,
     model: records[0]?.model ?? null,
     models: tags,
+    // The runner's own run.json (benchmark id, operator, provenance,
+    // schema_version, started_at, supersedes). Without it a reviewer sees a run
+    // id and a model tag and nothing about WHAT was run or whether the answers
+    // came from a live model or a canned fixture -- `provenance` is the
+    // difference between "this model did this" and "this was replayed".
+    meta: readRunMeta(dir),
+    // How many of this run's cases the loaded rubric actually covers. A rubric
+    // from a DIFFERENT corpus (the default is coder_cases_v1, while the triage/
+    // revdeck/sessions slots ship no rubric at all) leaves every case rubric
+    // null and buckets empty. That is a wrong-rubric condition, not a
+    // no-rubric-exists condition, and the UI has to be able to tell them apart.
+    rubricCoverage: {
+      file: RUBRIC.split('/').pop(),
+      loaded: rubricIndex?.size ?? 0,
+      matched: cases.size - [...cases.values()].filter(c => !c.rubric).length,
+    },
     diagnostics: {
       // Shown in Run info. Both are "this output may be worthless" signals and
       // must be visible before grading, not buried in a transcript field.
