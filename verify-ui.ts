@@ -388,6 +388,36 @@ console.log(transcript)
 if (!gotAttempts || !transcript.hasAttempt)
   errors.push('TRANSCRIPT: no "Round N" header -- model answers are not rendered')
 
+// --- the Record disclosure ------------------------------------------------
+// The transcript records slot, workflow, engine, inference options and the
+// prompt-contract hashes; none of it used to reach the screen. Without them two
+// runs of the same model are indistinguishable, so a harness change is
+// indistinguishable from a model regression. Assert the panel OPENS and shows
+// the fields -- asserting the trigger alone would pass if the disclosure were
+// wired to nothing.
+const openedRecord = await clickText('Record')
+await sleep(600)
+const record = await evalJs(`(() => {
+  const t = document.body.innerText;
+  return {opened: ${openedRecord},
+          hasSlot: /Slot/.test(t),
+          hasEngine: /Engine/.test(t),
+          hasOptions: /Inference options/.test(t),
+          hasSha: /Request sha256/.test(t),
+          hasContract: /Prompt contract/.test(t)};
+})()`)
+console.log('\n=== record panel ===')
+console.log(record)
+if (!record.opened) errors.push('RECORD: trigger not found or not clickable')
+if (!record.hasSlot) errors.push('RECORD: slot field missing')
+if (!record.hasEngine) errors.push('RECORD: engine field missing')
+if (!record.hasSha) errors.push('RECORD: request sha256 missing')
+// Assert the LABEL, not the values: a run written by an older runner records no
+// inference options at all, and "unrecorded" is the correct thing to show there.
+// Asserting values would fail the gate on old fixtures and teach nobody anything.
+if (!record.hasOptions)
+  errors.push('RECORD: no inference-options row -- the label must render even when unrecorded')
+
 // --- per-round ChatMessage -----------------------------------------------
 // One assistant bubble per round, so the reviewer can see where an attempt
 // ends. A single wrapping bubble ran all rounds together and the round

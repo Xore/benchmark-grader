@@ -42,6 +42,8 @@ import {
   saveGrade,
   saveLineNote,
   promptOf,
+  shortSha,
+  optionsOf,
   linesOf,
   bytesOf,
   type Artifact,
@@ -998,6 +1000,135 @@ export default function ResizableWorkspacePage() {
                                                   </Text>
                                                 </Collapsible>
                                               )}
+                                            {at.error ? (
+                                              <Banner
+                                                status="error"
+                                                title="Request failed"
+                                                collapsible={false}>
+                                                {at.error}
+                                              </Banner>
+                                            ) : null}
+                                            {/* Everything else the transcript
+                                                recorded but the transcript pane
+                                                did not surface: which slot and
+                                                workflow produced it, the
+                                                inference options that decide
+                                                reproducibility, and the sha256
+                                                hashes that pin the prompt
+                                                contract. Two runs of the same
+                                                model look identical here unless
+                                                you can see that one ran with
+                                                temperature=0,num_ctx=24576 and
+                                                a different prompt contract --
+                                                which is the only way to tell a
+                                                regression from a changed
+                                                harness. Collapsed by default:
+                                                a reviewer reading the answer
+                                                first should not have to pass
+                                                four hex strings to reach it. */}
+                                            <Collapsible
+                                              trigger={
+                                                <Text
+                                                  type="supporting"
+                                                  color="secondary">
+                                                  Record
+                                                </Text>
+                                              }
+                                              defaultIsOpen={false}>
+                                              <MetadataList
+                                                label={{position: 'top'}}
+                                                columns="multi">
+                                                <MetadataListItem
+                                                  label="Slot"
+                                                  children={
+                                                    at.slot ?? 'unrecorded'
+                                                  }
+                                                />
+                                                <MetadataListItem
+                                                  label="Workflow"
+                                                  children={
+                                                    at.workflow ?? 'unrecorded'
+                                                  }
+                                                />
+                                                <MetadataListItem
+                                                  label="Benchmark"
+                                                  children={
+                                                    at.benchmark ?? 'unrecorded'
+                                                  }
+                                                />
+                                                <MetadataListItem
+                                                  label="Provenance"
+                                                  children={
+                                                    at.provenance ?? 'unrecorded'
+                                                  }
+                                                />
+                                                <MetadataListItem
+                                                  label="Operator"
+                                                  children={
+                                                    at.operator ?? 'unrecorded'
+                                                  }
+                                                />
+                                                <MetadataListItem
+                                                  label="Tier"
+                                                  children={
+                                                    at.reproducibility?.tier ??
+                                                    'unrecorded'
+                                                  }
+                                                />
+                                                <MetadataListItem
+                                                  label="Engine"
+                                                  children={
+                                                    at.reproducibility?.engine ??
+                                                    'unrecorded'
+                                                  }
+                                                />
+                                                <MetadataListItem
+                                                  label="Model digest"
+                                                  children={shortSha(
+                                                    at.model?.digest,
+                                                  )}
+                                                />
+                                                <MetadataListItem
+                                                  label="Inference options"
+                                                  children={
+                                                    optionsOf(
+                                                      at.request?.body?.options,
+                                                    ) || 'unrecorded'
+                                                  }
+                                                />
+                                                <MetadataListItem
+                                                  label="Request sha256"
+                                                  children={shortSha(
+                                                    at.request?.body_sha256,
+                                                  )}
+                                                />
+                                                <MetadataListItem
+                                                  label="Prompt contract"
+                                                  children={
+                                                    at.reproducibility
+                                                      ?.prompt_contract
+                                                      ?.prompt_contract_version ??
+                                                    'unrecorded'
+                                                  }
+                                                />
+                                                <MetadataListItem
+                                                  label="System prompt sha256"
+                                                  children={shortSha(
+                                                    at.reproducibility
+                                                      ?.prompt_contract
+                                                      ?.system_prompt_sha256,
+                                                  )}
+                                                />
+                                                <MetadataListItem
+                                                  label="Rubric claims"
+                                                  children={
+                                                    at.claim_ids?.length
+                                                      ? at.claim_ids.join(', ')
+                                                      : 'none recorded'
+                                                  }
+                                                />
+                                              </MetadataList>
+                                            </Collapsible>
                                             {at.degenerate ||
                                             at.repetition_ratio != null ? (
                                               <HStack gap={2}>
@@ -1117,6 +1248,57 @@ export default function ResizableWorkspacePage() {
                                   label="Records"
                                   children={String(run?.records ?? 0)}
                                 />
+                                {/* run.json: WHICH benchmark produced these
+                                    answers and whether the model actually ran
+                                    them. `provenance: live_model` vs a
+                                    replayed fixture is the difference between
+                                    a real result and a cached one, and it was
+                                    in the run dir the whole time, unread. */}
+                                {run?.meta && (
+                                  <MetadataListItem
+                                    label="Benchmark"
+                                    children={
+                                      run.meta.benchmark ?? 'unrecorded'
+                                    }
+                                  />
+                                )}
+                                {run?.meta?.provenance && (
+                                  <MetadataListItem
+                                    label="Provenance"
+                                    children={
+                                      run.meta.provenance +
+                                      (run.meta.operator
+                                        ? ` (${run.meta.operator})`
+                                        : '')
+                                    }
+                                  />
+                                )}
+                                {run?.meta?.started_at && (
+                                  <MetadataListItem
+                                    label="Started"
+                                    children={
+                                      <Timestamp
+                                        value={run.meta.started_at}
+                                        format="date_time"
+                                      />
+                                    }
+                                  />
+                                )}
+                                {/* Wrong rubric is silent. The grader loads
+                                    coder_cases_v1_rubric.json by default, but
+                                    the triage/revdeck/sessions slots ship no
+                                    rubric under those names, so every case
+                                    renders `No rubric for this case` with no
+                                    hint that a 64-case rubric was loaded and
+                                    simply does not describe these cases. Say
+                                    it plainly instead. */}
+                                {run?.rubricCoverage &&
+                                  run.rubricCoverage.matched === 0 && (
+                                    <MetadataListItem
+                                      label="Rubric"
+                                      children={`no match — ${run.rubricCoverage.file} covers ${run.rubricCoverage.loaded} other cases`}
+                                    />
+                                  )}
                                 <MetadataListItem
                                   label="Degenerate"
                                   children={
