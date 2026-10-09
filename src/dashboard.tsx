@@ -46,9 +46,13 @@ import {
   optionsOf,
   linesOf,
   bytesOf,
+  ALL_MODELS_RUN_ID,
+  gradeFileKey,
+  gradeFor,
+  runIdForModel,
   type Artifact,
   type Case,
-  type Grade,
+  type GradeBook,
   type Run,
   type RunSummary,
 } from './data';
@@ -80,7 +84,7 @@ const styles: Record<string, CSSProperties> = {
     minHeight: 0,
   },
   fileExplorer: {
-    padding: 16,
+    padding: 'var(--spacing-4)',
     minWidth: 0,
   },
   propertiesPanel: {
@@ -101,12 +105,13 @@ function buildFileTree(
   // Grade state, so the tree answers "what have I already judged?" at a glance.
   // Without it a passed file and an ungraded file look identical and the only
   // way to find out is to remember -- pure recall over a 40-file case.
-  grades: Record<string, Grade>,
+  grades: GradeBook,
 ): TreeListItemData[] {
   const label = (text: string) => <Text maxLines={1}>{text}</Text>;
   return cases.map(c => ({
-    id: c.id,
-    label: label(c.id),
+    id: c.key,
+    label: label(c.label ?? c.id),
+    description: c.label ? c.runId : undefined,
     startContent: <Icon icon={FolderIcon} size="xsm" />,
     // Bucket as end content, straight from the frozen rubric. The old surface
     // showed it here; without it the tree gives no clue which corpus slice a
@@ -121,10 +126,10 @@ function buildFileTree(
       const names = c.artifacts.map(a => a.path.split('/').pop() ?? a.path);
       const dupe = (n: string) => names.filter(x => x === n).length > 1;
       return c.artifacts.map((a, i) => {
-      const score = grades[`${c.id}:${a.path}`]?.score;
+      const score = gradeFor(grades, c, a)?.score;
       const name = names[i]!;
       return {
-        id: `${c.id}:${a.path}`,
+        id: `${c.key}:${a.path}`,
         // Basename label; `description` carries the full path only when the
         // basename repeats (see below). The label used to be the whole path,
         // which clipped every row at EVERY width; the paths remain visible in
@@ -168,7 +173,7 @@ function buildFileTree(
             }
           />
         ),
-        isSelected: selectedId === `${c.id}:${a.path}`,
+        isSelected: selectedId === `${c.key}:${a.path}`,
         onClick: () => onFileClick(c, a),
       };
       });
@@ -196,7 +201,7 @@ export default function ResizableWorkspacePage() {
   const [cases, setCases] = useState<Case[]>([]);
   const [caseId, setCaseId] = useState('');
   const [picked, setPicked] = useState<{c: Case; a: Artifact} | null>(null);
-  const [grades, setGrades] = useState<Record<string, Grade>>({});
+  const [grades, setGrades] = useState<GradeBook>({});
   const [note, setNote] = useState('');
   const [lineStart, setLineStart] = useState<number | null>(null);
   const [lineEnd, setLineEnd] = useState<number | null>(null);
@@ -216,6 +221,7 @@ export default function ResizableWorkspacePage() {
   const [bulkMsg, setBulkMsg] = useState<string | null>(null);
   const [confirmBulkReq, setConfirmBulkReq] = useState<{
     caseId: string
+    caseLabel: string
     count: number
     skipped: number
   } | null>(null);
@@ -261,14 +267,14 @@ export default function ResizableWorkspacePage() {
     );
     const start = picked
       ? flat.findIndex(
-          ({c, a}) => c.id === picked.c.id && a.path === picked.a.path,
+          ({c, a}) => c.key === picked.c.key && a.path === picked.a.path,
         ) + 1
       : 0;
     // Wrap around: at the end of the list, "next ungraded" means the first one
     // you have not reached yet, not "nothing left".
     for (const pass of [flat.slice(start), flat.slice(0, start)]) {
       const hit = pass.find(
-        ({c, a}) => grades[`${c.id}:${a.path}`]?.score == null,
+        ({c, a}) => gradeFor(grades, c, a)?.score == null,
       );
       if (hit) return hit;
     }
@@ -286,13 +292,13 @@ export default function ResizableWorkspacePage() {
     () =>
       buildFileTree(
         visibleCases,
-        picked ? `${picked.c.id}:${picked.a.path}` : '',
+        picked ? `${picked.c.key}:${picked.a.path}` : '',
         (c, a) => {
           // ponytail: clicking a file must also move the case, or the transcript
           // pane keeps showing whichever case was last picked in the top nav.
           setPicked({c, a});
-          setCaseId(c.id);
-          setNote(grades[`${c.id}:${a.path}`]?.note ?? '');
+          setCaseId(c.key);
+          setNote(gradeFor(grades, c, a)?.note ?? '');
         },
         grades,
       ),
@@ -321,14 +327,12 @@ export default function ResizableWorkspacePage() {
       .catch(() => setRuns([]));
   }, []);
 
-  // Switching model jumps to that model's newest run. Leaving the stale run id
-  // selected would show the previous model's data under the new model's name.
+  // A model selects its newest run; All models selects the aggregate endpoint.
+  // Leaving the stale run id selected would show the previous model's data.
   useEffect(() => {
-    if (!modelTag) return;
-    const target = runsForModel.find(r => r.records > 0) ?? runsForModel[0];
-    if (target && target.id !== runId) setRunId(target.id);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [modelTag]);
+    const target = runIdForModel(modelTag, runs);
+    if (target && target !== runId) setRunId(target);
+  }, [modelTag, runs]);
 
   useEffect(() => {
     if (!runId) return;
@@ -337,8 +341,7 @@ export default function ResizableWorkspacePage() {
     // ponytail: capture the id and drop late responses instead of an
     // AbortController -- same guarantee, no teardown plumbing. Without this, a
     // slow response for the run you just LEFT overwrites the current one, and
-    // since `grade()` keys writes on `runId`, its verdicts land in the wrong
-    // runbook permanently.
+    // otherwise the panes can show a run the selectors no longer name.
     const mine = runId;
     const stale = () => mine !== runId;
     loadRun(runId)
@@ -346,7 +349,7 @@ export default function ResizableWorkspacePage() {
         if (stale()) return;
         setRun(r);
         setCases(r.cases);
-        setCaseId(r.cases[0]?.id ?? '');
+        setCaseId(r.cases[0]?.key ?? '');
       })
       .catch(() => {
         if (stale()) return;
@@ -356,7 +359,7 @@ export default function ResizableWorkspacePage() {
     loadGrades()
       .then(g => {
         if (stale()) return;
-        setGrades((g[runId]?.files ?? {}) as Record<string, Grade>);
+        setGrades(g);
       })
       .catch(() => {
         if (stale()) return;
@@ -387,7 +390,7 @@ export default function ResizableWorkspacePage() {
   useEffect(() => {
     // Skip when the new caseId is exactly the case of the file just picked:
     // clicking a tree row sets both, and clearing here would undo the click.
-    if (picked?.c.id === caseId) return;
+    if (picked?.c.key === caseId) return;
     setPicked(null);
     setLineStart(null);
     setLineEnd(null);
@@ -397,7 +400,7 @@ export default function ResizableWorkspacePage() {
     // that moves the selection routes through this effect, so one reset here
     // covers the case selector, "Next ungraded" and J/K navigation alike.
     setNote('');
-  }, [caseId, picked?.c.id]);
+  }, [caseId, picked?.c.key]);
 
   // ponytail: the note is passed in, not read from state. Reading `note` here
   // means a grade made from the tree/context menu silently attaches whatever
@@ -409,9 +412,9 @@ export default function ResizableWorkspacePage() {
   };
 
   const grade = (c: Case, a: Artifact, score: number | null, withNote = note) =>
-    saveGrade(runId, `${c.id}:${a.path}`, score, withNote)
+    saveGrade(c.runId, gradeFileKey(c, a), score, withNote)
       .then(g => {
-        setGrades((g[runId]?.files ?? {}) as Record<string, Grade>);
+        setGrades(g);
         // Announce, and say what was saved. A silently-swallowed rejection used
         // to make a failed write look exactly like a successful one, which for
         // a grading tool is the worst possible failure mode: the reviewer walks
@@ -442,13 +445,15 @@ export default function ResizableWorkspacePage() {
       else if (k === 'c' && picked) { e.preventDefault(); grade(picked.c, picked.a, null); }
       else if ((k === 'j' || k === 'k') && navFiles.length) {
         e.preventDefault();
-        const i = navFiles.findIndex(x => x.a.path === picked?.a.path);
+        const i = navFiles.findIndex(
+          x => x.c.key === picked?.c.key && x.a.path === picked?.a.path,
+        );
         // j = next, k = previous; wrap at both ends so the tree is a loop.
         const n = (i < 0 ? -1 : i) + (k === 'j' ? 1 : -1);
         const next = navFiles[((n % navFiles.length) + navFiles.length) % navFiles.length];
         setPicked({ c: next.c, a: next.a });
-        setCaseId(next.c.id);
-        setNote(grades[`${next.c.id}:${next.a.path}`]?.note ?? '');
+        setCaseId(next.c.key);
+        setNote(gradeFor(grades, next.c, next.a)?.note ?? '');
         // Land on the SOURCE pane, not whatever tab was showing. Moving
         // selection without moving the view means you grade the new file
         // against the previous file's transcript -- the two panes disagree,
@@ -458,8 +463,8 @@ export default function ResizableWorkspacePage() {
       } else if (e.key === 'Enter' && nextUngraded) {
         e.preventDefault();
         setPicked({ c: nextUngraded.c, a: nextUngraded.a });
-        setCaseId(nextUngraded.c.id);
-        setNote(grades[`${nextUngraded.c.id}:${nextUngraded.a.path}`]?.note ?? '');
+        setCaseId(nextUngraded.c.key);
+        setNote(gradeFor(grades, nextUngraded.c, nextUngraded.a)?.note ?? '');
         setViewTab('source');
       }
     };
@@ -469,7 +474,7 @@ export default function ResizableWorkspacePage() {
 
   /** Note anchored to a line range; falls back to the whole-file note. */
   const rangeNote = (c: Case, a: Artifact) => {
-    const g = grades[`${c.id}:${a.path}`];
+    const g = gradeFor(grades, c, a);
     return g?.lineNotes?.find(
       n =>
         n.lineStart === (lineStart ?? undefined) &&
@@ -479,14 +484,14 @@ export default function ResizableWorkspacePage() {
 
   const saveRangeNote = (c: Case, a: Artifact) =>
     saveLineNote(
-      runId,
-      `${c.id}:${a.path}`,
+      c.runId,
+      gradeFileKey(c, a),
       lineStart ?? undefined,
       lineEnd ?? undefined,
       note,
     )
       .then(g => {
-        setGrades((g[runId]?.files ?? {}) as Record<string, Grade>);
+        setGrades(g);
         say(
           lineStart != null
             ? `Saved note on ${a.path} lines ${lineStart}${
@@ -520,10 +525,10 @@ export default function ResizableWorkspacePage() {
   // context menu call this, so the confirm + ungraded-only rule cannot be
   // bypassed by one of them and enforced by the other.
   const requestBulkPass = (targetCaseId: string) => {
-    const cur = cases.find(c => c.id === targetCaseId);
+    const cur = cases.find(c => c.key === targetCaseId);
     if (!cur) return;
     const ungraded = cur.artifacts.filter(
-      a => grades[`${cur.id}:${a.path}`]?.score == null,
+      a => gradeFor(grades, cur, a)?.score == null,
     );
     // Everything already graded: there is nothing to confirm, say so instead of
     // opening a dialog that can only fail.
@@ -537,7 +542,8 @@ export default function ResizableWorkspacePage() {
     }
     setBulkMsg(null);
     setConfirmBulkReq({
-      caseId: cur.id,
+      caseId: cur.key,
+      caseLabel: cur.label ?? cur.id,
       count: ungraded.length,
       skipped: cur.artifacts.length - ungraded.length,
     });
@@ -545,7 +551,7 @@ export default function ResizableWorkspacePage() {
 
   const gradeAll = () => requestBulkPass(caseId);
 
-  const curCase = cases.find(c => c.id === caseId);
+  const curCase = cases.find(c => c.key === caseId);
   const totalFiles = cases.reduce((n, c) => n + c.artifacts.length, 0);
 
   // real per-file facts for the inspector, replacing demo PROPERTIES
@@ -564,7 +570,7 @@ export default function ResizableWorkspacePage() {
       // Was an IIFE destructuring its argument -- which threw when the file has
       // no grade at all, i.e. exactly the common case on a fresh run.
       value: (() => {
-        const score = grades[`${picked.c.id}:${picked.a.path}`]?.score;
+        const score = gradeFor(grades, picked.c, picked.a)?.score;
         return score === 1 ? 'Passed' : score === 0 ? 'Failed' : 'Not graded';
       })(),
     },
@@ -574,7 +580,7 @@ export default function ResizableWorkspacePage() {
       // into a 320px panel where it wraps. Timestamp renders it as a readable
       // local time with the full value still available.
       value: (() => {
-        const at = grades[`${picked.c.id}:${picked.a.path}`]?.at;
+        const at = gradeFor(grades, picked.c, picked.a)?.at;
         return at ? <Timestamp value={at} format="date_time" /> : 'not graded';
       })(),
     },
@@ -592,10 +598,10 @@ export default function ResizableWorkspacePage() {
   const GRADED = cases
     .flatMap(c =>
       c.artifacts.map(a => {
-        const g = grades[`${c.id}:${a.path}`];
+        const g = gradeFor(grades, c, a);
         return g?.at
           ? {
-              key: `${c.id}:${a.path}`,
+              key: `${c.key}:${a.path}`,
               label: `${c.id} / ${a.path.split('/').pop()}`,
               at: g.at as string,
               score: g.score,
@@ -692,21 +698,30 @@ export default function ResizableWorkspacePage() {
                 placeholder="Select a run"
                 // Grouped by model tag so a re-run of the same model sits next
                 // to its siblings instead of in an undifferentiated id list.
-                options={Object.entries(
-                  runsForModel.reduce<Record<string, typeof runsForModel>>((acc, r) => {
-                    (acc[r.model] ??= []).push(r);
-                    return acc;
-                  }, {}),
-                ).map(([model, rs]) => ({
-                  type: 'section' as const,
-                  key: model,
-                  title: `${model} (${rs.length} run${rs.length === 1 ? '' : 's'})`,
-                  options: rs.map(r => ({
-                    value: r.id,
-                    label: r.id,
-                    description: `${r.records} records · ${r.cases} cases`,
+                options={[
+                  ...(!modelTag
+                    ? [{
+                        value: ALL_MODELS_RUN_ID,
+                        label: 'All model runs',
+                        description: `${models.length} models · ${runs.length} runs`,
+                      }]
+                    : []),
+                  ...Object.entries(
+                    runsForModel.reduce<Record<string, typeof runsForModel>>((acc, r) => {
+                      (acc[r.model] ??= []).push(r);
+                      return acc;
+                    }, {}),
+                  ).map(([model, rs]) => ({
+                    type: 'section' as const,
+                    key: model,
+                    title: `${model} (${rs.length} run${rs.length === 1 ? '' : 's'})`,
+                    options: rs.map(r => ({
+                      value: r.id,
+                      label: r.id,
+                      description: `${r.records} records · ${r.cases} cases`,
+                    })),
                   })),
-                }))}
+                ]}
                 onChange={setRunId}
               />
               <Selector
@@ -719,9 +734,11 @@ export default function ResizableWorkspacePage() {
                 // matching file, so offering every case here let a reviewer
                 // search down to one and still be handed the other 39.
                 options={visibleCases.map(c => ({
-                  value: c.id,
-                  label: c.id,
-                  description: `${c.artifacts.length} files`,
+                  value: c.key,
+                  label: c.label ?? c.id,
+                  description: c.label
+                    ? `${c.runId} · ${c.artifacts.length} files`
+                    : `${c.artifacts.length} files`,
                 }))}
                 onChange={setCaseId}
               />
@@ -749,7 +766,7 @@ export default function ResizableWorkspacePage() {
                 label="Grade all"
                 size="sm"
                 onClick={gradeAll}
-                isDisabled={!cases.find(c => c.id === caseId)}
+                isDisabled={!cases.find(c => c.key === caseId)}
               />
             </HStack>
           }
@@ -913,9 +930,9 @@ export default function ResizableWorkspacePage() {
                                                 // rejection look identical to an
                                                 // untouched file -- so a reviewer
                                                 // re-grades what they rejected.
-                                                grades[`${curCase.id}:${a.path}`]?.score === 1
+                                                gradeFor(grades, curCase, a)?.score === 1
                                                   ? 'Passed'
-                                                  : grades[`${curCase.id}:${a.path}`]?.score === 0
+                                                  : gradeFor(grades, curCase, a)?.score === 0
                                                     ? 'Failed'
                                                     : 'Not graded'
                                               }
@@ -1432,8 +1449,8 @@ export default function ResizableWorkspacePage() {
                                         // every file instantly, which is the
                                         // same destructive one-click shortcut
                                         // the top-nav button was fixed for.
-                                        setCaseId(picked.c.id);
-                                        requestBulkPass(picked.c.id);
+                                        setCaseId(picked.c.key);
+                                        requestBulkPass(picked.c.key);
                                       },
                                     },
                                   ]
@@ -1702,7 +1719,7 @@ export default function ResizableWorkspacePage() {
                                           onClick={() => {
                                             if (!nextUngraded) return;
                                             setPicked({c: nextUngraded.c, a: nextUngraded.a});
-                                            setCaseId(nextUngraded.c.id);
+                                            setCaseId(nextUngraded.c.key);
                                             setViewTab('source');
                                           }}
                                         />
@@ -1827,7 +1844,7 @@ export default function ResizableWorkspacePage() {
     )}
     {confirmBulkReq && (
       <AlertDialog
-        title={`Pass all ${confirmBulkReq.count} file${confirmBulkReq.count === 1 ? '' : 's'} in ${confirmBulkReq.caseId}?`}
+        title={`Pass all ${confirmBulkReq.count} file${confirmBulkReq.count === 1 ? '' : 's'} in ${confirmBulkReq.caseLabel}?`}
         description={
           confirmBulkReq.skipped > 0
             ? `This marks ${confirmBulkReq.count} file(s) as PASS and leaves ${confirmBulkReq.skipped} already-graded file(s) untouched. Grades are saved immediately and can be changed per file afterwards.`
@@ -1842,12 +1859,12 @@ export default function ResizableWorkspacePage() {
           const req = confirmBulkReq;
           setConfirmBulkReq(null);
           if (!req) return;
-          const cur = cases.find(c => c.id === req.caseId);
+          const cur = cases.find(c => c.key === req.caseId);
           // Ungraded only: a bulk pass must never overwrite a human decision
           // that was already made on some of the case's files.
           cur?.artifacts.forEach(a => {
-            if (grades[`${cur.id}:${a.path}`]?.score == null)
-              grade(cur, a, 1, grades[`${cur.id}:${a.path}`]?.note ?? '');
+            if (gradeFor(grades, cur, a)?.score == null)
+              grade(cur, a, 1, gradeFor(grades, cur, a)?.note ?? '');
           });
         }}
       />

@@ -2,6 +2,8 @@
 // fetching, no mock data — every field comes from the real benchmark runner
 // output under RUN_DIR.
 
+export const ALL_MODELS_RUN_ID = '__all__'
+
 export type Artifact = {
   path: string
   lang: string
@@ -94,6 +96,12 @@ export type Rubric = {
 
 export type Case = {
   id: string
+  /** Adds model context in the aggregate view; the source case id stays intact. */
+  label?: string
+  /** Stable UI identity and the source run that owns grades for this case. */
+  key: string
+  runId: string
+  model: string
   attempts: Attempt[]
   artifacts: Artifact[]
   rubric?: Rubric | null
@@ -135,6 +143,13 @@ export type RunSummary = {
   model: string
 }
 
+export function runIdForModel(model: string, runs: RunSummary[]): string {
+  if (!runs.length) return ''
+  if (!model) return ALL_MODELS_RUN_ID
+  const matching = runs.filter(run => run.model === model)
+  return matching.find(run => run.records > 0)?.id ?? matching[0]?.id ?? ''
+}
+
 export type Grade = {
   score: number | null
   note: string
@@ -170,6 +185,11 @@ export const loadRun = (id: string) =>
   json<Run>(`/api/run/${encodeURIComponent(id)}`)
 
 export type GradeBook = Record<string, {files?: Record<string, Grade>}>
+
+export const gradeFileKey = (c: Case, a: Artifact) => `${c.id}:${a.path}`
+
+export const gradeFor = (grades: GradeBook, c: Case, a: Artifact) =>
+  grades[c.runId]?.files?.[gradeFileKey(c, a)]
 
 export const loadGrades = () => json<GradeBook>('/api/grades')
 

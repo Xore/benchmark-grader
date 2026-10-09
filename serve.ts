@@ -13,6 +13,7 @@ import {join} from 'node:path'
 import {mkdirSync, writeFileSync} from 'node:fs'
 import {renameSync, rmdirSync, rmSync} from 'node:fs'
 import {tmpdir} from 'node:os'
+import {ALL_MODELS_RUN_ID} from './src/data'
 
 const ROOT = '/home/xore/Desktop/benchmark-grader'
 const PORT = Number(process.env.PORT ?? 3020)
@@ -127,6 +128,19 @@ type Case = {
   artifacts: {path: string; lang: string; source: string; case: string}[]
 }
 
+type LoadedCase = Case & {key: string; runId: string; model: string; label?: string}
+type LoadedRun = {
+  id: string
+  records: number
+  model: unknown
+  models: string[]
+  meta: unknown
+  rubricCoverage: {file: string; loaded: number; matched: number}
+  diagnostics: {degenerate: number; maxRepetitionRatio: number | null}
+  buckets: Record<string, number>
+  cases: LoadedCase[]
+}
+
 function safeRead(path: string): string | null {
   try {
     return readFileSync(path, 'utf8')
@@ -230,8 +244,8 @@ function repetitionRatio(text: string): number | null {
 
 // ponytail: one pass per run, cached. Fine for ~50 records; add mtime invalidation
 // if runs are appended to while the dashboard is open.
-function loadRun(runId: string): unknown | null {
-  const dir = join(RUN_DIR, runId)
+function loadRun(runId: string, runDir = RUN_DIR): LoadedRun | null {
+  const dir = join(runDir, runId)
   const raw = safeRead(join(dir, 'transcripts.jsonl'))
   if (raw === null) return null
   const records = raw
@@ -402,21 +416,62 @@ function loadRun(runId: string): unknown | null {
       maxRepetitionRatio: ratios.length ? Math.max(...ratios) : null,
     },
     buckets: Object.fromEntries([...buckets.entries()].sort((a, b) => b[1] - a[1])),
-    cases: [...cases.values()],
+    cases: [...cases.values()].map(c => ({
+      ...c,
+      key: `${runId}:${c.id}`,
+      runId,
+      model: tags.join(', ') || 'unknown',
+    })),
   }
 }
 
-function listRuns(): string[] {
+function listRuns(runDir = RUN_DIR): string[] {
   try {
-    return readdirSync(RUN_DIR).filter(d => {
+    return readdirSync(runDir).filter(d => {
       try {
-        return statSync(join(RUN_DIR, d)).isDirectory()
+        return statSync(join(runDir, d)).isDirectory()
       } catch {
         return false
       }
     })
   } catch {
     return []
+  }
+}
+
+function loadAllRuns(runDir = RUN_DIR): LoadedRun | null {
+  const runs = listRuns(runDir)
+    .map(id => loadRun(id, runDir))
+    .filter((run): run is LoadedRun => run !== null)
+  if (!runs.length) return null
+
+  const ratios = runs
+    .map(run => run.diagnostics.maxRepetitionRatio)
+    .filter((ratio): ratio is number => ratio !== null)
+  const buckets: Record<string, number> = {}
+  for (const run of runs)
+    for (const [bucket, count] of Object.entries(run.buckets))
+      buckets[bucket] = (buckets[bucket] ?? 0) + count
+
+  return {
+    id: ALL_MODELS_RUN_ID,
+    records: runs.reduce((sum, run) => sum + run.records, 0),
+    model: null,
+    models: [...new Set(runs.flatMap(run => run.models))].sort(),
+    meta: null,
+    rubricCoverage: {
+      file: runs[0].rubricCoverage.file,
+      loaded: Math.max(...runs.map(run => run.rubricCoverage.loaded)),
+      matched: runs.reduce((sum, run) => sum + run.rubricCoverage.matched, 0),
+    },
+    diagnostics: {
+      degenerate: runs.reduce((sum, run) => sum + run.diagnostics.degenerate, 0),
+      maxRepetitionRatio: ratios.length ? Math.max(...ratios) : null,
+    },
+    buckets,
+    cases: runs.flatMap(run =>
+      run.cases.map(c => ({...c, label: `${c.model} · ${c.id}`})),
+    ),
   }
 }
 
@@ -686,6 +741,44 @@ if (process.argv.includes('--selftest')) {
     }
   }
 
+  // 5. The All models view is one real run-shaped payload containing every
+  //    run's attempts and artifacts, with origin ids preserved for grading.
+  {
+    const fx = join(tmpdir(), `all-models-selftest-${process.pid}`)
+    try {
+      for (const [runId, model, caseId, slot] of [
+        ['run-a', 'model-a', 'case-a', 'sessions'],
+        ['run-b', 'model-b', 'case-b', 'revdeck'],
+      ] as const) {
+        const dir = join(fx, runId)
+        const artifactDir = join(dir, 'coder-artifacts', model, 'tool-written')
+        mkdirSync(artifactDir, {recursive: true})
+        writeFileSync(
+          join(dir, 'transcripts.jsonl'),
+          JSON.stringify({case: caseId, slot, model: {tag: model}}) + '\n',
+        )
+        writeFileSync(join(artifactDir, `${caseId}.py`), `print(${JSON.stringify(model)})\n`)
+      }
+
+      const all = loadAllRuns(fx)
+      const attempts = all?.cases.flatMap(c => c.attempts) ?? []
+      const artifacts = all?.cases.flatMap(c => c.artifacts) ?? []
+      if (
+        all?.id !== ALL_MODELS_RUN_ID ||
+        all.records !== 2 ||
+        attempts.length !== 2 ||
+        artifacts.length !== 2 ||
+        new Set(all.cases.map(c => c.runId)).size !== 2 ||
+        new Set(all.cases.map(c => c.key)).size !== 2
+      ) {
+        console.error('FAIL All models: did not preserve every run, attempt and artifact')
+        regBad++
+      }
+    } finally {
+      rmSync(fx, {recursive: true, force: true})
+    }
+  }
+
   if (bad || regBad) process.exit(1)
   process.exit(0)
 }
@@ -738,7 +831,7 @@ Bun.serve({
 
     if (p.startsWith('/api/run/')) {
       const id = decodeURIComponent(p.slice('/api/run/'.length))
-      const run = loadRun(id)
+      const run = id === ALL_MODELS_RUN_ID ? loadAllRuns() : loadRun(id)
       return run ? Response.json(run) : new Response('not found', {status: 404})
     }
 

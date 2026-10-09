@@ -6,7 +6,7 @@
     "start": "bun run serve.ts",
     "dev": "bun run --hot serve.ts",
     "serve": "bun run serve.ts",
-    "verify:selftest": "bun run serve.ts --selftest",
+    "verify:selftest": "bun test && bun run serve.ts --selftest",
     "verify:ui": "bun run verify-ui.ts"
   },
   "dependencies": {
